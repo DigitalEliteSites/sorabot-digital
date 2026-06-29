@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — Sorabot Digital</title>
+<style>
+:root{
+  --bg:#07090f;--card:#111827;--card2:#0f1621;
+  --txt:#f0f4ff;--muted:#8896aa;--border:rgba(255,255,255,.08);
+  --purple:#7c6dfa;--teal:#22d3c4;--gold:#e8c55a;
+  --green:#22c55e;--red:#ef4444;--orange:#fb923c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-sans-serif,system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;line-height:1.6;}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(800px 500px at 50% 0%,rgba(124,109,250,.18),transparent 60%);}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:40px;max-width:400px;width:100%;text-align:center;}
+.login-logo{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--purple),var(--teal));display:grid;place-items:center;font-weight:900;font-size:24px;color:#fff;margin:0 auto 16px;box-shadow:0 0 30px rgba(124,109,250,.3);}
+.login-card h1{font-size:22px;font-weight:900;margin-bottom:4px}
+.login-card p{color:var(--muted);font-size:14px;margin-bottom:28px}
+.inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;color:var(--txt);padding:13px 14px;font-size:15px;font-family:inherit;outline:none;margin-bottom:12px;transition:.15s;}
+.inp:focus{border-color:rgba(124,109,250,.5);background:rgba(124,109,250,.04)}
+.btn-login{width:100%;background:linear-gradient(135deg,var(--purple),var(--teal));color:#fff;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:15px;cursor:pointer;transition:.15s;}
+.btn-login:hover{filter:brightness(1.1)}
+.err{color:var(--red);font-size:13px;margin-top:10px;display:none;font-weight:700;}
+
+/* LAYOUT */
+.admin-wrap{display:none;min-height:100vh;}
+.admin-topbar{background:rgba(7,9,15,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.admin-topbar__brand{display:flex;align-items:center;gap:10px;}
+.topbar-logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--teal));display:grid;place-items:center;font-weight:900;font-size:16px;color:#fff;}
+.topbar-title{font-weight:900;font-size:16px;}
+.topbar-sub{font-size:11px;color:var(--muted);}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.badge-count{background:rgba(124,109,250,.15);border:1px solid rgba(124,109,250,.3);color:var(--purple);font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;}
+.badge-new{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:var(--green);font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.btn-sm{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap;}
+.btn-sm:hover{color:var(--txt);background:rgba(255,255,255,.08)}
+.btn-danger{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:var(--red);}
+.btn-danger:hover{background:rgba(239,68,68,.15)}
+
+.admin-body{max-width:1100px;margin:0 auto;padding:24px 20px;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:28px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;text-align:center;position:relative;overflow:hidden;}
+.stat-card::before{content:"";position:absolute;inset:-1px;background:linear-gradient(135deg,rgba(124,109,250,.08),transparent 60%);pointer-events:none;}
+.stat-card__icon{font-size:22px;margin-bottom:6px;}
+.stat-card__num{font-size:30px;font-weight:900;background:linear-gradient(90deg,var(--purple),var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.stat-card__lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* FILTERS */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center;}
+.filter-btn{padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:.15s;}
+.filter-btn:hover,.filter-btn.active{border-color:var(--purple);background:rgba(124,109,250,.14);color:var(--txt);}
+.search-wrap{flex:1;min-width:200px;position:relative;}
+.search-wrap input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;color:var(--txt);padding:9px 14px 9px 36px;font-size:13px;outline:none;font-family:inherit;}
+.search-wrap input:focus{border-color:rgba(124,109,250,.4)}
+.search-wrap::before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;}
+
+/* ORDERS */
+.orders-list{display:grid;gap:12px;}
+.order-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:.2s;}
+.order-card:hover{border-color:rgba(124,109,250,.2);}
+.order-card.status-new{border-left:3px solid var(--green);}
+.order-card.status-progress{border-left:3px solid var(--gold);}
+.order-card.status-done{border-left:3px solid var(--purple);}
+.order-card__head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;cursor:pointer;}
+.order-card__head:hover{background:rgba(255,255,255,.015)}
+.ohead-left{display:flex;align-items:center;gap:12px;}
+.ohead-avatar{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,rgba(124,109,250,.3),rgba(34,211,196,.2));display:grid;place-items:center;font-size:15px;font-weight:900;color:var(--purple);flex-shrink:0;}
+.order-ref{font-size:10px;color:var(--muted);font-family:monospace;letter-spacing:.5px;}
+.order-email{font-weight:800;font-size:14px;margin:2px 0;}
+.order-date{font-size:12px;color:var(--muted);}
+.ohead-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.plan-badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;}
+.plan-badge.starter{background:rgba(124,109,250,.12);border:1px solid rgba(124,109,250,.25);color:var(--purple);}
+.plan-badge.standard{background:rgba(232,197,90,.1);border:1px solid rgba(232,197,90,.25);color:var(--gold);}
+.plan-badge.pro{background:rgba(34,211,196,.1);border:1px solid rgba(34,211,196,.25);color:var(--teal);}
+.plan-badge.elite{background:rgba(34,211,196,.1);border:1px solid rgba(34,211,196,.25);color:var(--teal);}
+.status-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;cursor:pointer;border:1px solid;}
+.status-badge.En.attente{background:rgba(251,146,60,.1);border-color:rgba(251,146,60,.25);color:var(--orange);}
+.status-badge.En.cours{background:rgba(232,197,90,.1);border-color:rgba(232,197,90,.25);color:var(--gold);}
+.status-badge.Livré{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);color:var(--green);}
+.chevron{color:var(--muted);font-size:16px;transition:.2s;}
+.chevron.open{transform:rotate(90deg);}
+
+.order-card__body{display:none;padding:0 18px 18px;border-top:1px solid var(--border);}
+.order-card__body.open{display:block;}
+
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+.detail-box{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.detail-box h4{font-size:11px;color:var(--purple);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.info-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;}
+.info-row:last-child{border-bottom:none}
+.info-lbl{color:var(--muted);min-width:100px;font-size:12px;font-weight:600;}
+.info-val{color:var(--txt);flex:1;word-break:break-all;}
+.info-val.pwd{font-family:monospace;font-size:12px;background:rgba(124,109,250,.08);padding:2px 6px;border-radius:6px;color:var(--purple);}
+.sel-block{background:rgba(124,109,250,.05);border:1px solid rgba(124,109,250,.12);border-radius:12px;padding:12px;}
+.sel-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:12px;}
+.sel-row:last-child{margin-bottom:0}
+.sel-lbl{font-weight:800;color:var(--muted);min-width:80px;}
+.sel-vals{color:var(--txt);}
+.order-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.btn-action{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid;transition:.15s;}
+.btn-wa{background:#25d366;color:#fff;border-color:#1db857;text-decoration:none;}
+.btn-wa:hover{filter:brightness(1.1)}
+.btn-copy{background:rgba(124,109,250,.1);color:var(--purple);border-color:rgba(124,109,250,.25);}
+.btn-copy:hover{background:rgba(124,109,250,.2)}
+.status-select{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--txt);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;outline:none;}
+
+/* NOTES ADMIN */
+.admin-note-wrap{margin-top:10px;}
+.admin-note{width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;color:var(--txt);padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;outline:none;min-height:60px;}
+.admin-note:focus{border-color:rgba(124,109,250,.4)}
+.btn-save-note{margin-top:6px;background:rgba(124,109,250,.1);border:1px solid rgba(124,109,250,.25);color:var(--purple);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty__icon{font-size:52px;margin-bottom:14px;}
+.empty h3{font-size:18px;font-weight:900;color:var(--txt);margin-bottom:6px;}
+
+@media(max-width:700px){
+  .detail-grid{grid-template-columns:1fr;}
+  .admin-topbar{padding:0 14px;flex-wrap:wrap;height:auto;padding:12px 14px;}
+  .topbar-actions{gap:6px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="login-logo">S</div>
+    <h1>Espace Admin</h1>
+    <p>Sorabot Digital — accès réservé</p>
+    <input class="inp" type="password" id="pwdInput" placeholder="Mot de passe admin" onkeydown="if(event.key==='Enter')login()"/>
+    <button class="btn-login" onclick="login()">Accéder au dashboard</button>
+    <div class="err" id="loginErr">❌ Mot de passe incorrect</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="admin-wrap" id="adminWrap">
+
+  <div class="admin-topbar">
+    <div class="admin-topbar__brand">
+      <div class="topbar-logo">S</div>
+      <div>
+        <div class="topbar-title">Dashboard Sorabot Digital</div>
+        <div class="topbar-sub">Commandes boutiques</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="badge-count" id="totalBadge">0</span>
+      <span class="badge-new" id="newBadge" style="display:none">🔔 Nouvelles</span>
+      <button class="btn-sm" onclick="loadOrders()">🔄 Actualiser</button>
+      <button class="btn-sm" onclick="exportCSV()">📤 Export CSV</button>
+      <button class="btn-sm btn-danger" onclick="clearOrders()">🗑 Effacer tout</button>
+      <button class="btn-sm" onclick="logout()">🚪 Déco</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="filters">
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Rechercher par nom, email, WhatsApp, réf…" oninput="filterOrders()"/>
+      </div>
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">Toutes</button>
+      <button class="filter-btn" data-filter="En attente" onclick="setFilter('En attente',this)">🟠 En attente</button>
+      <button class="filter-btn" data-filter="En cours" onclick="setFilter('En cours',this)">🟡 En cours</button>
+      <button class="filter-btn" data-filter="Livré" onclick="setFilter('Livré',this)">🟢 Livrées</button>
+    </div>
+
+    <div class="orders-list" id="ordersList"></div>
+
+  </div>
+</div>
+
+<script>
+const ADMIN_PWD = 'Sora@123s.';
+let allOrders = [];
+let currentFilter = 'all';
+
+function login(){
+  if(document.getElementById('pwdInput').value === ADMIN_PWD){
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('adminWrap').style.display='block';
+    loadOrders();
+    setInterval(loadOrders, 30000);
+  } else {
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+
+function logout(){
+  document.getElementById('loginWrap').style.display='grid';
+  document.getElementById('adminWrap').style.display='none';
+  document.getElementById('pwdInput').value='';
+  document.getElementById('loginErr').style.display='none';
+}
+
+function loadOrders(){
+  allOrders = JSON.parse(localStorage.getItem('sorabot_orders')||'[]').reverse();
+  renderStats();
+  filterOrders();
+}
+
+function renderStats(){
+  const total = allOrders.length;
+  const pending = allOrders.filter(o=>o.status==='En attente'||!o.status).length;
+  const inprog = allOrders.filter(o=>o.status==='En cours').length;
+  const done = allOrders.filter(o=>o.status==='Livré').length;
+  const revenue = allOrders.reduce((sum,o)=>sum+(o.plan?.priceEUR||0),0);
+  const planCount={starter:0,standard:0,pro:0};
+  allOrders.forEach(o=>{ if(o.plan?.key) planCount[o.plan.key]=(planCount[o.plan.key]||0)+1; });
+  const topPlan = Object.entries(planCount).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('totalBadge').textContent = total+' commande'+(total!==1?'s':'');
+  document.getElementById('newBadge').style.display = pending>0?'inline-block':'none';
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-card__icon">📦</div><div class="stat-card__num">${total}</div><div class="stat-card__lbl">Total commandes</div></div>
+    <div class="stat-card"><div class="stat-card__icon">🟠</div><div class="stat-card__num">${pending}</div><div class="stat-card__lbl">En attente</div></div>
+    <div class="stat-card"><div class="stat-card__icon">🟡</div><div class="stat-card__num">${inprog}</div><div class="stat-card__lbl">En cours</div></div>
+    <div class="stat-card"><div class="stat-card__icon">✅</div><div class="stat-card__num">${done}</div><div class="stat-card__lbl">Livrées</div></div>
+    <div class="stat-card"><div class="stat-card__icon">💰</div><div class="stat-card__num">${revenue}€</div><div class="stat-card__lbl">CA total (estimé)</div></div>
+    ${topPlan && topPlan[1]>0 ? `<div class="stat-card"><div class="stat-card__icon">🏆</div><div class="stat-card__num">${topPlan[0]}</div><div class="stat-card__lbl">Plan le + vendu</div></div>` : ''}
+  `;
+}
+
+function setFilter(f, btn){
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  filterOrders();
+}
+
+function filterOrders(){
+  const q = (document.getElementById('searchInput').value||'').toLowerCase();
+  let filtered = allOrders;
+  if(currentFilter !== 'all'){
+    filtered = filtered.filter(o=>(o.status||'En attente')===currentFilter);
+  }
+  if(q){
+    filtered = filtered.filter(o=>
+      (o.email||'').toLowerCase().includes(q)||
+      (o.ref||'').toLowerCase().includes(q)||
+      (o.prenom||'').toLowerCase().includes(q)||
+      (o.nom||'').toLowerCase().includes(q)||
+      (o.whatsapp||'').toLowerCase().includes(q)||
+      (o.plan?.name||'').toLowerCase().includes(q)||
+      JSON.stringify(o.selections||{}).toLowerCase().includes(q)
+    );
+  }
+  renderOrders(filtered);
+}
+
+function renderOrders(orders){
+  const list = document.getElementById('ordersList');
+  if(!orders.length){
+    list.innerHTML=`<div class="empty"><div class="empty__icon">📭</div><h3>Aucune commande</h3><p>Les commandes s'affichent ici dès qu'un client passe commande sur le site.</p></div>`;
+    return;
+  }
+  list.innerHTML = orders.map((o,i) => {
+    const status = o.status||'En attente';
+    const planKey = o.plan?.key||'';
+    const fullname = (o.prenom||'')+' '+(o.nom||'');
+    const initials = fullname.trim() ? fullname.trim().split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() : (o.email||'?').substring(0,2).toUpperCase();
+    const majeurBadge = o.majeur===true
+      ? `<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--green);padding:3px 8px;border-radius:999px;">✅ Majeur(e) · ${o.age} ans</span>`
+      : o.majeur===false
+      ? `<span style="font-size:10px;font-weight:700;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--red);padding:3px 8px;border-radius:999px;">❌ Mineur(e) · ${o.age} ans</span>`
+      : '';
+
+    const selHtml = Object.entries(o.selections||{}).map(([cat,vals])=>
+      `<div class="sel-row"><span class="sel-lbl">${cat}</span><span class="sel-vals">${vals.join(' · ')}</span></div>`
+    ).join('');
+    const clientNum = (o.whatsapp||'').replace(/\D/g,'');
+    const waMsg = encodeURIComponent(`Bonjour ${o.prenom||''} ! C'est Sorabot Digital. J'ai bien reçu ta commande (réf: ${o.ref||o.id}). Ta boutique est en cours de création, je te la livre sous 48h. 🙏`);
+    const waHref = clientNum ? `https://wa.me/${clientNum}?text=${waMsg}` : null;
+    const adminNote = o.adminNote||'';
+
+    const statuses=['En attente','En cours','Livré'];
+    const statusBtns = statuses.map(s=>{
+      const isActive = status===s;
+      let style='';
+      if(s==='En attente') style=isActive?'background:rgba(251,146,60,.2);border-color:rgba(251,146,60,.5);color:var(--orange);':'background:rgba(251,146,60,.05);border-color:rgba(251,146,60,.15);color:var(--muted);';
+      if(s==='En cours') style=isActive?'background:rgba(232,197,90,.2);border-color:rgba(232,197,90,.5);color:var(--gold);':'background:rgba(232,197,90,.05);border-color:rgba(232,197,90,.15);color:var(--muted);';
+      if(s==='Livré') style=isActive?'background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.5);color:var(--green);':'background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.15);color:var(--muted);';
+      return `<button onclick="event.stopPropagation();updateStatus(${o.id},'${s}')" style="font-size:11px;font-weight:700;padding:5px 11px;border-radius:999px;border:1px solid;cursor:pointer;transition:.15s;${style}">${s==='En attente'?'🟠':s==='En cours'?'🟡':'✅'} ${s}</button>`;
+    }).join('');
+
+    return `
+    <div class="order-card status-${status.toLowerCase().replace(' ','-')}" id="ocard-${o.id}">
+      <div class="order-card__head" onclick="toggleOrder(${o.id})">
+        <div class="ohead-left">
+          <div class="ohead-avatar">${initials}</div>
+          <div>
+            <div class="order-ref">${o.ref||('#'+o.id)}</div>
+            <div class="order-email">${fullname.trim()||o.email}</div>
+            <div class="order-date">${o.email} · ${o.date}</div>
+          </div>
+        </div>
+        <div class="ohead-right">
+          ${majeurBadge}
+          ${planKey ? `<span class="plan-badge ${planKey}">${o.plan?.name||planKey}</span>` : ''}
+          <span class="plan-badge" style="background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);">${o.plan?.priceEUR||0}€</span>
+          <span class="chevron" id="ch-${o.id}">›</span>
+        </div>
+      </div>
+
+      <div style="padding:8px 18px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:11px;color:var(--muted);font-weight:700;margin-right:4px;">Statut :</span>
+        ${statusBtns}
+      </div>
+
+      <div class="order-card__body" id="body-${o.id}">
+        <div class="detail-grid">
+
+          <div class="detail-box">
+            <h4>👤 Infos client</h4>
+            <div class="info-row"><span class="info-lbl">Prénom</span><span class="info-val">${o.prenom||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Nom</span><span class="info-val">${o.nom||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Âge</span><span class="info-val">${o.age ? o.age+' ans' : '—'} ${majeurBadge}</span></div>
+            <div class="info-row"><span class="info-lbl">Date naiss.</span><span class="info-val">${o.dob||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">📱 WhatsApp</span><span class="info-val" style="color:var(--green);font-weight:700;">${o.whatsapp||'—'}</span></div>
+            ${o.notes?`<div class="info-row"><span class="info-lbl">Précisions</span><span class="info-val">${o.notes}</span></div>`:''}
+          </div>
+
+          <div class="detail-box">
+            <h4>🔐 Identifiants boutique</h4>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5;">Email + mot de passe à utiliser pour créer/livrer la boutique du client :</div>
+            <div class="info-row"><span class="info-lbl">📧 Email</span><span class="info-val">${o.email}</span></div>
+            <div class="info-row"><span class="info-lbl">🔑 Mot de passe</span><span class="info-val pwd">${o.pwd||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Plan</span><span class="info-val">${o.plan?.name||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Prix</span><span class="info-val">${o.plan?.priceEUR||'—'}€ · ${o.plan?.priceLocal||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Paiement</span><span class="info-val" style="color:var(--green);">Orange Money ✓</span></div>
+            <div class="info-row"><span class="info-lbl">Statut</span><span class="info-val"><strong>${status}</strong></span></div>
+          </div>
+
+        </div>
+
+        ${o.proof ? `
+        <div class="detail-box" style="margin-top:14px;">
+          <h4>📸 Preuve de paiement</h4>
+          <img src="${o.proof}" onclick="window.open('${o.proof}','_blank')" style="max-width:100%;max-height:280px;border-radius:12px;margin-top:8px;cursor:zoom-in;border:1px solid var(--border);" title="Cliquer pour agrandir"/>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;">Clique sur l'image pour l'agrandir.</div>
+        </div>` : `
+        <div class="detail-box" style="margin-top:14px;">
+          <h4>📸 Preuve de paiement</h4>
+          <div style="font-size:13px;color:var(--orange);padding:8px 0;">⚠️ Aucune preuve enregistrée pour cette commande.</div>
+        </div>`}
+
+        <div class="detail-box" style="margin-top:14px;">
+          <h4>🛍️ Produits sélectionnés</h4>
+          <div class="sel-block" style="margin-top:8px;">${selHtml||'<span style="color:var(--muted);font-size:13px">Aucun produit</span>'}</div>
+        </div>
+
+        <div class="detail-box" style="margin-top:14px;">
+          <h4>📝 Notes admin</h4>
+          <div class="admin-note-wrap">
+            <textarea class="admin-note" id="note-${o.id}" placeholder="Ajoute tes notes internes (avancement, fichiers envoyés, détails…)">${adminNote}</textarea>
+            <button class="btn-save-note" onclick="saveNote(${o.id})">💾 Sauvegarder la note</button>
+          </div>
+        </div>
+
+        <div class="order-actions">
+          ${waHref
+            ? `<a class="btn-action btn-wa" href="${waHref}" target="_blank">💬 Contacter le client</a>`
+            : `<span class="btn-action" style="background:rgba(255,255,255,.04);border-color:var(--border);color:var(--muted);cursor:not-allowed;">💬 Pas de WhatsApp</span>`}
+          <button class="btn-action btn-copy" onclick="copyText('${o.whatsapp||''}','Numéro')">📱 Copier numéro</button>
+          <button class="btn-action btn-copy" onclick="copyEmail('${o.email}')">📋 Copier email</button>
+          <button class="btn-action btn-copy" onclick="copyPwd('${o.pwd||''}')">🔑 Copier mot de passe</button>
+          <button class="btn-action" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:var(--red);" onclick="deleteOrder(${o.id})">🗑 Supprimer</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleOrder(id){
+  const body = document.getElementById('body-'+id);
+  const ch = document.getElementById('ch-'+id);
+  const open = body.classList.toggle('open');
+  ch.classList.toggle('open',open);
+}
+
+function cycleStatus(id){
+  const statuses=['En attente','En cours','Livré'];
+  const orders=JSON.parse(localStorage.getItem('sorabot_orders')||'[]');
+  const idx=orders.findIndex(o=>o.id===id);
+  if(idx<0) return;
+  const cur=orders[idx].status||'En attente';
+  orders[idx].status=statuses[(statuses.indexOf(cur)+1)%statuses.length];
+  localStorage.setItem('sorabot_orders',JSON.stringify(orders));
+  loadOrders();
+}
+
+function updateStatus(id,val){
+  const orders=JSON.parse(localStorage.getItem('sorabot_orders')||'[]');
+  const idx=orders.findIndex(o=>o.id===id);
+  if(idx<0) return;
+  orders[idx].status=val;
+  localStorage.setItem('sorabot_orders',JSON.stringify(orders));
+  allOrders=JSON.parse(localStorage.getItem('sorabot_orders')||'[]').reverse();
+  renderStats();
+  filterOrders();
+  showFlash('Statut mis à jour : '+val+' ✓');
+}
+
+function saveNote(id){
+  const note=document.getElementById('note-'+id).value;
+  const orders=JSON.parse(localStorage.getItem('sorabot_orders')||'[]');
+  const idx=orders.findIndex(o=>o.id===id);
+  if(idx<0) return;
+  orders[idx].adminNote=note;
+  localStorage.setItem('sorabot_orders',JSON.stringify(orders));
+  showFlash('Note sauvegardée ✓');
+}
+
+function deleteOrder(id){
+  if(!confirm('Supprimer cette commande ?')) return;
+  let orders=JSON.parse(localStorage.getItem('sorabot_orders')||'[]');
+  orders=orders.filter(o=>o.id!==id);
+  localStorage.setItem('sorabot_orders',JSON.stringify(orders));
+  loadOrders();
+}
+
+function clearOrders(){
+  if(!confirm('Effacer TOUTES les commandes ? Irréversible.')) return;
+  localStorage.removeItem('sorabot_orders');
+  loadOrders();
+}
+
+function copyEmail(email){
+  navigator.clipboard.writeText(email).then(()=>showFlash('Email copié ✓'));
+}
+function copyPwd(pwd){
+  if(!pwd){showFlash('Aucun mot de passe');return;}
+  navigator.clipboard.writeText(pwd).then(()=>showFlash('Mot de passe copié ✓'));
+}
+function copyText(txt,label){
+  if(!txt){showFlash('Aucun '+(label||'élément'));return;}
+  navigator.clipboard.writeText(txt).then(()=>showFlash((label||'Texte')+' copié ✓'));
+}
+
+function showFlash(msg){
+  let f=document.getElementById('flash');
+  if(!f){f=document.createElement('div');f.id='flash';f.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111827;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;color:#22c55e;z-index:999;transition:.3s;';document.body.appendChild(f);}
+  f.textContent=msg;f.style.opacity='1';
+  clearTimeout(f._t);f._t=setTimeout(()=>f.style.opacity='0',2000);
+}
+
+function exportCSV(){
+  const orders=JSON.parse(localStorage.getItem('sorabot_orders')||'[]');
+  if(!orders.length){alert('Aucune commande à exporter.');return;}
+  const rows=[['Réf','Date','Prénom','Nom','Âge','Majeur','WhatsApp','Email','Mot de passe','Plan','Prix EUR','Prix local','Devise','Statut','Preuve','Produits','Notes client','Notes admin']];
+  orders.forEach(o=>{
+    const sel=Object.entries(o.selections||{}).map(([k,v])=>`${k}: ${v.join(', ')}`).join(' | ');
+    rows.push([o.ref||o.id,o.date,o.prenom||'',o.nom||'',o.age||'',o.majeur?'Oui':'Non',o.whatsapp||'',o.email,o.pwd||'',o.plan?.name||'',o.plan?.priceEUR||'',o.plan?.priceLocal||'',o.plan?.currency||'',o.status||'En attente',o.proof?'Oui':'Non',sel,o.notes||'',o.adminNote||'']);
+  });
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='commandes-sorabot-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+</script>
+</body>
+</html>
