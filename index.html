@@ -439,6 +439,8 @@ a{color:inherit;text-decoration:none}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
 <script>
 /* ============================================================
    ⚙️  ZONE À MODIFIER FACILEMENT : tes services, offres et prix
@@ -510,6 +512,7 @@ const WA_NUMBER = '224625914607';      // numéro WhatsApp + Orange Money (sans 
 let currency = 'GNF';
 let cart = new Set();                  // ids des offres sélectionnées
 let proofDataUrl = '';
+const sb = (window.supabase && window.SB_URL) ? window.supabase.createClient(window.SB_URL, window.SB_ANON) : null;
 
 /* ---------- Helpers prix ---------- */
 function offerById(id){
@@ -669,7 +672,7 @@ function handleProof(input){
 function goStep2Guard(){ return cart.size>0; }
 
 /* ---------- Soumission de la commande ---------- */
-function submitOrder(){
+async function submitOrder(){
   const prenom = document.getElementById('fPrenom').value.trim();
   const nom    = document.getElementById('fNom').value.trim();
   const whatsapp = document.getElementById('fWhatsapp').value.trim();
@@ -711,7 +714,17 @@ function submitOrder(){
     localStorage.setItem('sorabot_orders', JSON.stringify(all));
   }catch(err){ console.warn('localStorage plein ou indisponible', err); }
 
-  // 2) (à venir) envoi vers la base de données temps réel
+  // 2) Envoi vers la base de données Supabase (temps réel, multi-appareils)
+  if(sb){
+    try{
+      const { error } = await sb.from('orders').insert({
+        ref, prenom, nom, whatsapp, email, notes,
+        total_eur: total, currency, price_local: order.plan.priceLocal,
+        selections, items, proof: proofDataUrl, status: 'En attente'
+      });
+      if(error) console.warn('Supabase insert:', error.message);
+    }catch(e){ console.warn('Supabase exception:', e); }
+  }
 
   // 3) Message WhatsApp pré-rempli vers le vendeur
   const lines = [];
