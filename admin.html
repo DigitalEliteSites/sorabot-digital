@@ -205,11 +205,14 @@ function subscribeRealtime(){
 
 function mapRow(r){
   const items = r.items || [];
+  const d = r.details || {};
   return {
     id: r.id,
     ref: r.ref || ('#'+String(r.id).slice(0,6)),
     date: r.created_at ? new Date(r.created_at).toLocaleString('fr-FR') : '',
     prenom: r.prenom, nom: r.nom, whatsapp: r.whatsapp, email: r.email, notes: r.notes,
+    dob: d.dob||'', age: (d.age!=null?d.age:null), majeur: (typeof d.majeur==='boolean'?d.majeur:null),
+    pwd: d.pwd||'', paidAmount: (d.paid_amount!=null?d.paid_amount:''), paidCurrency: d.paid_currency||r.currency||'',
     plan: { name: items.length+' offre'+(items.length>1?'s':''), priceEUR: Number(r.total_eur)||0, priceLocal: r.price_local||'', currency: r.currency||'' },
     selections: r.selections || {},
     items,
@@ -283,6 +286,11 @@ function renderOrders(orders){
     const waMsg=encodeURIComponent(`Bonjour ${o.prenom||''} ! C'est Sorabot Digital. J'ai bien reçu ta commande (réf: ${o.ref}). Je m'en occupe et je reviens vers toi très vite. 🙏`);
     const waHref=clientNum?`https://wa.me/${clientNum}?text=${waMsg}`:null;
     const adminNote=o.adminNote||'';
+    const majeurBadge = o.majeur===true
+      ? `<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green);padding:3px 8px;border-radius:999px;">✅ Majeur · ${o.age} ans</span>`
+      : o.majeur===false
+      ? `<span style="font-size:10px;font-weight:700;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.3);color:var(--orange);padding:3px 8px;border-radius:999px;">⚠️ Mineur · ${o.age} ans</span>`
+      : '';
     const statuses=['En attente','En cours','Livré'];
     const statusBtns=statuses.map(s=>{
       const isActive=status===s; let style='';
@@ -304,6 +312,7 @@ function renderOrders(orders){
           </div>
         </div>
         <div class="ohead-right">
+          ${majeurBadge}
           <span class="plan-badge" style="background:rgba(124,109,250,.12);border:1px solid rgba(124,109,250,.25);color:var(--purple);">${o.plan.name}</span>
           <span class="plan-badge" style="background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);">${o.plan.priceEUR||0}€</span>
           <span class="chevron" id="ch-${o.id}">›</span>
@@ -321,6 +330,8 @@ function renderOrders(orders){
             <h4>👤 Infos client</h4>
             <div class="info-row"><span class="info-lbl">Prénom</span><span class="info-val">${o.prenom||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">Nom</span><span class="info-val">${o.nom||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Âge</span><span class="info-val">${o.age!=null?o.age+' ans':'—'} ${majeurBadge}</span></div>
+            <div class="info-row"><span class="info-lbl">Naissance</span><span class="info-val">${o.dob||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">📱 WhatsApp</span><span class="info-val" style="color:var(--green);font-weight:700;">${o.whatsapp||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">📧 Email</span><span class="info-val">${o.email||'—'}</span></div>
             ${o.notes?`<div class="info-row"><span class="info-lbl">Précisions</span><span class="info-val">${o.notes}</span></div>`:''}
@@ -330,6 +341,8 @@ function renderOrders(orders){
             <div class="info-row"><span class="info-lbl">Réf</span><span class="info-val">${o.ref}</span></div>
             <div class="info-row"><span class="info-lbl">Offres</span><span class="info-val">${o.plan.name}</span></div>
             <div class="info-row"><span class="info-lbl">Total</span><span class="info-val"><strong>${o.plan.priceEUR||0}€</strong> · ${o.plan.priceLocal||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">💰 Montant payé</span><span class="info-val">${(o.paidAmount!=null&&o.paidAmount!=='')?o.paidAmount+' '+(o.paidCurrency||''):'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">🔑 Mot de passe</span><span class="info-val" style="font-family:monospace;color:var(--gold)">${o.pwd||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">Devise client</span><span class="info-val">${o.plan.currency||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">Paiement</span><span class="info-val" style="color:var(--green);">Orange Money ✓</span></div>
             <div class="info-row"><span class="info-lbl">Statut</span><span class="info-val"><strong>${status}</strong></span></div>
@@ -364,6 +377,7 @@ function renderOrders(orders){
           ${waHref?`<a class="btn-action btn-wa" href="${waHref}" target="_blank">💬 Contacter le client</a>`:`<span class="btn-action" style="background:rgba(255,255,255,.04);border-color:var(--border);color:var(--muted);cursor:not-allowed;">💬 Pas de WhatsApp</span>`}
           <button class="btn-action btn-copy" onclick="copyText('${o.whatsapp||''}','Numéro')">📱 Copier numéro</button>
           <button class="btn-action btn-copy" onclick="copyText('${o.email||''}','Email')">📋 Copier email</button>
+          <button class="btn-action btn-copy" onclick="copyText('${o.pwd||''}','Mot de passe')">🔑 Copier mdp</button>
           <button class="btn-action" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:var(--red);" onclick="deleteOrder('${o.id}')">🗑 Supprimer</button>
         </div>
       </div>
@@ -424,10 +438,10 @@ function showFlash(msg){
 
 function exportCSV(){
   if(!allOrders.length){ alert('Aucune commande à exporter.'); return; }
-  const rows=[['Réf','Date','Prénom','Nom','WhatsApp','Email','Total EUR','Devise','Statut','Offres','Notes client','Notes admin']];
+  const rows=[['Réf','Date','Prénom','Nom','Naissance','Âge','Majeur','WhatsApp','Email','Mot de passe','Total EUR','Devise','Montant payé','Statut','Offres','Notes client','Notes admin']];
   allOrders.forEach(o=>{
     const sel=Object.entries(o.selections||{}).map(([k,v])=>`${k}: ${(v||[]).join(', ')}`).join(' | ');
-    rows.push([o.ref,o.date,o.prenom||'',o.nom||'',o.whatsapp||'',o.email||'',o.plan?.priceEUR||'',o.plan?.currency||'',o.status||'',sel,o.notes||'',o.adminNote||'']);
+    rows.push([o.ref,o.date,o.prenom||'',o.nom||'',o.dob||'',o.age!=null?o.age:'',o.majeur===true?'Oui':(o.majeur===false?'Non':''),o.whatsapp||'',o.email||'',o.pwd||'',o.plan?.priceEUR||'',o.plan?.currency||'',(o.paidAmount!=null&&o.paidAmount!==''?o.paidAmount+' '+(o.paidCurrency||''):''),o.status||'',sel,o.notes||'',o.adminNote||'']);
   });
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
