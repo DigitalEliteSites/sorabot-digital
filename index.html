@@ -176,6 +176,11 @@ a{color:inherit;text-decoration:none}
 .pay-method__name{font-weight:800;font-size:14px;color:var(--gold)}
 .pay-method__num{font-size:12px;color:var(--muted);margin-top:2px}
 .proof-drop{border:2px dashed var(--border);border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;background:rgba(232,197,90,.03)}
+.proof-status{margin-top:10px;padding:11px 14px;border-radius:12px;font-size:12.5px;font-weight:700;line-height:1.5}
+.proof-status.checking{background:rgba(232,197,90,.06);border:1px solid var(--border);color:var(--gold)}
+.proof-status.ok{background:rgba(57,217,138,.08);border:1px solid rgba(57,217,138,.3);color:var(--green)}
+.proof-status.bad{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#ff8a8a}
+.proof-status b{color:var(--txt)}
 .pay-confirm{margin-top:14px}
 .pay-confirm label{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--soft);cursor:pointer}
 .pay-confirm input{width:16px;height:16px;margin-top:3px;accent-color:var(--gold);flex-shrink:0}
@@ -488,6 +493,7 @@ a{color:inherit;text-decoration:none}
           </div>
         </div>
         <input type="file" id="fProof" accept="image/*" style="display:none" onchange="handleProof(this)"/>
+        <div id="proofStatus" class="proof-status" style="display:none"></div>
 
         <div class="pay-confirm">
           <label><input type="checkbox" id="payConfirm"/> J'ai bien envoyé le montant exact via Orange Money au <strong>+224 625 91 46 07</strong>.</label>
@@ -517,6 +523,7 @@ a{color:inherit;text-decoration:none}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <script>
@@ -589,6 +596,8 @@ const DELIVERY_HOURS = 50;
 let currency = 'GNF';
 let cart = new Set();
 let proofDataUrl = '';
+let proofCheck = 'pending';   // 'pending' | 'ok' | 'bad' | 'skip'
+let proofOcrDigits = '';
 const sb = (window.supabase && window.SB_URL) ? window.supabase.createClient(window.SB_URL, window.SB_ANON) : null;
 
 /* ---------- Prix ---------- */
@@ -635,7 +644,7 @@ function renderServices(){
 }
 function toggleOffer(id){ if(cart.has(id)) cart.delete(id); else { cart.add(id); const r=offerById(id); showToast('Ajouté : '+(r?r.offer.name:'')); } renderServices(); updateBasket(); }
 function updateBasket(){ const n=cart.size; document.getElementById('basketCount').textContent=n; document.getElementById('basketSticky').style.display=n>0?'block':'none'; }
-function onCurrencyChange(){ currency=document.getElementById('currencySelect').value; renderServices(); renderCart(); updatePayAmount(); checkPaid(); }
+function onCurrencyChange(){ currency=document.getElementById('currencySelect').value; renderServices(); renderCart(); updatePayAmount(); checkPaid(); recheckProof(); }
 
 /* ---------- Panier ---------- */
 function renderCart(){
@@ -730,8 +739,39 @@ function handleProof(input){
   const file=input.files[0]; if(!file) return;
   if(!file.type.startsWith('image/')){ alert('Choisis une image (JPG ou PNG).'); return; }
   const reader=new FileReader();
-  reader.onload=e=>{ const img=new Image(); img.onload=()=>{ const max=1000; let w=img.width,h=img.height; if(w>max||h>max){ const r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r);} const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); proofDataUrl=c.toDataURL('image/jpeg',0.7); document.getElementById('proofImg').src=proofDataUrl; document.getElementById('proofPlaceholder').style.display='none'; document.getElementById('proofPreview').style.display='block'; }; img.src=e.target.result; };
+  reader.onload=e=>{ const img=new Image(); img.onload=()=>{ const max=1000; let w=img.width,h=img.height; if(w>max||h>max){ const r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r);} const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); proofDataUrl=c.toDataURL('image/jpeg',0.7); document.getElementById('proofImg').src=proofDataUrl; document.getElementById('proofPlaceholder').style.display='none'; document.getElementById('proofPreview').style.display='block'; verifyProofAmount(); }; img.src=e.target.result; };
   reader.readAsDataURL(file);
+}
+
+/* ---------- Vérification anti-arnaque : le montant doit être lisible sur l'image ---------- */
+async function verifyProofAmount(){
+  const total=cartTotalEur();
+  const box=document.getElementById('proofStatus');
+  if(total<=0){ proofCheck='skip'; if(box) box.style.display='none'; return; }
+  proofCheck='pending'; proofOcrDigits='';
+  if(box){ box.style.display='block'; box.className='proof-status checking'; box.innerHTML='🔍 Lecture du montant sur l\'image… (quelques secondes)'; }
+  if(typeof Tesseract==='undefined'){ proofCheck='skip'; if(box) box.style.display='none'; return; }
+  try{
+    const res=await Tesseract.recognize(proofDataUrl,'eng');
+    const text=(res&&res.data&&res.data.text)||'';
+    proofOcrDigits=text.replace(/[oO]/g,'0').replace(/[^\d]/g,'');
+    recheckProof();
+  }catch(e){ console.warn('OCR indisponible:',e); proofCheck='skip'; if(box) box.style.display='none'; }
+}
+function recheckProof(){
+  const box=document.getElementById('proofStatus'); const total=cartTotalEur();
+  if(!box) return;
+  if(total<=0||!proofOcrDigits){ if(total<=0) proofCheck='skip'; box.style.display='none'; return; }
+  const expected=String(localNumeric(total)).replace(/\D/g,'');
+  if(expected.length<4){ proofCheck='skip'; box.style.display='none'; return; }   // montant trop court pour vérifier de façon fiable
+  box.style.display='block';
+  if(proofOcrDigits.includes(expected)){
+    proofCheck='ok'; box.className='proof-status ok';
+    box.innerHTML='✅ Montant vérifié sur l\'image ('+fmt(total)+').';
+  } else {
+    proofCheck='bad'; box.className='proof-status bad';
+    box.innerHTML='⛔ Le montant de ta commande ('+fmt(total)+') n\'apparaît pas sur la capture. Envoie une image où le <b>montant payé est bien lisible</b>.';
+  }
 }
 
 /* ---------- Soumission ---------- */
@@ -749,6 +789,8 @@ async function submitOrder(){
     if(Math.abs(v-expected)>tol){ alert('⛔ Le montant payé ('+v+' '+SYM[currency]+') ne correspond pas au montant à payer ('+fmt(total)+'). Corrige-le pour continuer.'); return; }
   }
   if(!proofDataUrl){ alert('Ajoute la preuve de paiement (capture Orange Money).'); return; }
+  if(total>0 && proofCheck==='pending'){ alert('⏳ Patiente une seconde : je vérifie le montant sur ta capture…'); return; }
+  if(total>0 && proofCheck==='bad'){ alert('⛔ Sécurité anti-arnaque : le montant de ta commande n\'apparaît pas sur la capture de paiement. Envoie une capture où le montant exact ('+fmt(total)+') est bien lisible.'); return; }
   if(!document.getElementById('payConfirm').checked){ alert('Coche la case de confirmation du paiement.'); return; }
 
   const prenom=document.getElementById('fPrenom').value.trim();
@@ -811,6 +853,7 @@ async function submitOrder(){
   // reset
   cart.clear(); updateBasket(); renderServices();
   proofDataUrl=''; document.getElementById('payConfirm').checked=false;
+  proofCheck='pending'; proofOcrDigits=''; { const psb=document.getElementById('proofStatus'); if(psb) psb.style.display='none'; }
   document.getElementById('proofPlaceholder').style.display='block'; document.getElementById('proofPreview').style.display='none';
   setTimeout(()=>window.open(waHref,'_blank'),400);
 }
