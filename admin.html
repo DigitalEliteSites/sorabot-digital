@@ -156,7 +156,8 @@ body{font-family:ui-sans-serif,system-ui,sans-serif;background:var(--bg);color:v
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <script>
-const sb = window.supabase.createClient(window.SB_URL, window.SB_ANON);
+// persistSession:false -> l'admin redemande le mot de passe a chaque ouverture (plus sur)
+const sb = window.supabase.createClient(window.SB_URL, window.SB_ANON, { auth: { persistSession: false, autoRefreshToken: false } });
 let allOrders = [];
 let currentFilter = 'all';
 let realtimeStarted = false;
