@@ -270,6 +270,12 @@ function filterOrders(){
   renderOrders(filtered);
 }
 
+// Neutralise le HTML (protection anti-XSS) — les commandes viennent de l'exterieur
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function findOrder(id){ return allOrders.find(o=>String(o.id)===String(id)); }
+function copyField(id,field,label){ const o=findOrder(id); copyText(o?(o[field]||''):'',label); }
+const STATUS_CLASS={'En attente':'en-attente','En cours':'en-cours','Livré':'livré'};
+
 function renderOrders(orders){
   const list=document.getElementById('ordersList');
   if(!orders.length){
@@ -278,18 +284,20 @@ function renderOrders(orders){
   }
   list.innerHTML=orders.map(o=>{
     const status=o.status||'En attente';
+    const statusClass=STATUS_CLASS[status]||'en-attente';
     const fullname=((o.prenom||'')+' '+(o.nom||'')).trim();
     const initials=fullname ? fullname.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() : (o.email||'?').substring(0,2).toUpperCase();
     const selHtml=Object.entries(o.selections||{}).map(([cat,vals])=>
-      `<div class="sel-row"><span class="sel-lbl">${cat}</span><span class="sel-vals">${(vals||[]).join(' · ')}</span></div>`).join('');
+      `<div class="sel-row"><span class="sel-lbl">${esc(cat)}</span><span class="sel-vals">${(Array.isArray(vals)?vals:[]).map(esc).join(' · ')}</span></div>`).join('');
     const clientNum=(o.whatsapp||'').replace(/\D/g,'');
     const waMsg=encodeURIComponent(`Bonjour ${o.prenom||''} ! C'est Sorabot Digital. J'ai bien reçu ta commande (réf: ${o.ref}). Je m'en occupe et je reviens vers toi très vite. 🙏`);
     const waHref=clientNum?`https://wa.me/${clientNum}?text=${waMsg}`:null;
     const adminNote=o.adminNote||'';
+    const safeProof=(typeof o.proof==='string' && /^data:image\//.test(o.proof))?o.proof:'';
     const majeurBadge = o.majeur===true
-      ? `<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green);padding:3px 8px;border-radius:999px;">✅ Majeur · ${o.age} ans</span>`
+      ? `<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green);padding:3px 8px;border-radius:999px;">✅ Majeur · ${esc(o.age)} ans</span>`
       : o.majeur===false
-      ? `<span style="font-size:10px;font-weight:700;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.3);color:var(--orange);padding:3px 8px;border-radius:999px;">⚠️ Mineur · ${o.age} ans</span>`
+      ? `<span style="font-size:10px;font-weight:700;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.3);color:var(--orange);padding:3px 8px;border-radius:999px;">⚠️ Mineur · ${esc(o.age)} ans</span>`
       : '';
     const statuses=['En attente','En cours','Livré'];
     const statusBtns=statuses.map(s=>{
@@ -301,20 +309,20 @@ function renderOrders(orders){
     }).join('');
 
     return `
-    <div class="order-card status-${status.toLowerCase().replace(' ','-')}" id="ocard-${o.id}">
+    <div class="order-card status-${statusClass}" id="ocard-${o.id}">
       <div class="order-card__head" onclick="toggleOrder('${o.id}')">
         <div class="ohead-left">
-          <div class="ohead-avatar">${initials}</div>
+          <div class="ohead-avatar">${esc(initials)}</div>
           <div>
-            <div class="order-ref">${o.ref}</div>
-            <div class="order-email">${fullname||o.email||'—'}</div>
-            <div class="order-date">${o.email||''} · ${o.date}</div>
+            <div class="order-ref">${esc(o.ref)}</div>
+            <div class="order-email">${esc(fullname||o.email||'—')}</div>
+            <div class="order-date">${esc(o.email||'')} · ${esc(o.date)}</div>
           </div>
         </div>
         <div class="ohead-right">
           ${majeurBadge}
-          <span class="plan-badge" style="background:rgba(124,109,250,.12);border:1px solid rgba(124,109,250,.25);color:var(--purple);">${o.plan.name}</span>
-          <span class="plan-badge" style="background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);">${o.plan.priceEUR||0}€</span>
+          <span class="plan-badge" style="background:rgba(124,109,250,.12);border:1px solid rgba(124,109,250,.25);color:var(--purple);">${esc(o.plan.name)}</span>
+          <span class="plan-badge" style="background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);">${Number(o.plan.priceEUR)||0}€</span>
           <span class="chevron" id="ch-${o.id}">›</span>
         </div>
       </div>
@@ -328,36 +336,36 @@ function renderOrders(orders){
         <div class="detail-grid">
           <div class="detail-box">
             <h4>👤 Infos client</h4>
-            <div class="info-row"><span class="info-lbl">Prénom</span><span class="info-val">${o.prenom||'—'}</span></div>
-            <div class="info-row"><span class="info-lbl">Nom</span><span class="info-val">${o.nom||'—'}</span></div>
-            <div class="info-row"><span class="info-lbl">Âge</span><span class="info-val">${o.age!=null?o.age+' ans':'—'} ${majeurBadge}</span></div>
-            <div class="info-row"><span class="info-lbl">Naissance</span><span class="info-val">${o.dob||'—'}</span></div>
-            <div class="info-row"><span class="info-lbl">📱 WhatsApp</span><span class="info-val" style="color:var(--green);font-weight:700;">${o.whatsapp||'—'}</span></div>
-            <div class="info-row"><span class="info-lbl">📧 Email</span><span class="info-val">${o.email||'—'}</span></div>
-            ${o.notes?`<div class="info-row"><span class="info-lbl">Précisions</span><span class="info-val">${o.notes}</span></div>`:''}
+            <div class="info-row"><span class="info-lbl">Prénom</span><span class="info-val">${esc(o.prenom)||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Nom</span><span class="info-val">${esc(o.nom)||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Âge</span><span class="info-val">${o.age!=null?esc(o.age)+' ans':'—'} ${majeurBadge}</span></div>
+            <div class="info-row"><span class="info-lbl">Naissance</span><span class="info-val">${esc(o.dob)||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">📱 WhatsApp</span><span class="info-val" style="color:var(--green);font-weight:700;">${esc(o.whatsapp)||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">📧 Email</span><span class="info-val">${esc(o.email)||'—'}</span></div>
+            ${o.notes?`<div class="info-row"><span class="info-lbl">Précisions</span><span class="info-val">${esc(o.notes)}</span></div>`:''}
           </div>
           <div class="detail-box">
             <h4>💳 Commande & paiement</h4>
-            <div class="info-row"><span class="info-lbl">Réf</span><span class="info-val">${o.ref}</span></div>
-            <div class="info-row"><span class="info-lbl">Offres</span><span class="info-val">${o.plan.name}</span></div>
-            <div class="info-row"><span class="info-lbl">Total</span><span class="info-val"><strong>${o.plan.priceEUR||0}€</strong> · ${o.plan.priceLocal||'—'}</span></div>
-            <div class="info-row"><span class="info-lbl">💰 Montant payé</span><span class="info-val">${(o.paidAmount!=null&&o.paidAmount!=='')?o.paidAmount+' '+(o.paidCurrency||''):'—'}</span></div>
-            <div class="info-row"><span class="info-lbl">🔑 Mot de passe</span><span class="info-val" style="font-family:monospace;color:var(--gold)">${o.pwd||'—'}</span></div>
-            <div class="info-row"><span class="info-lbl">Devise client</span><span class="info-val">${o.plan.currency||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Réf</span><span class="info-val">${esc(o.ref)}</span></div>
+            <div class="info-row"><span class="info-lbl">Offres</span><span class="info-val">${esc(o.plan.name)}</span></div>
+            <div class="info-row"><span class="info-lbl">Total</span><span class="info-val"><strong>${Number(o.plan.priceEUR)||0}€</strong> · ${esc(o.plan.priceLocal)||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">💰 Montant payé</span><span class="info-val">${(o.paidAmount!=null&&o.paidAmount!=='')?esc(o.paidAmount)+' '+esc(o.paidCurrency||''):'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">🔑 Mot de passe</span><span class="info-val" style="font-family:monospace;color:var(--gold)">${esc(o.pwd)||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">Devise client</span><span class="info-val">${esc(o.plan.currency)||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">Paiement</span><span class="info-val" style="color:var(--green);">Orange Money ✓</span></div>
-            <div class="info-row"><span class="info-lbl">Statut</span><span class="info-val"><strong>${status}</strong></span></div>
+            <div class="info-row"><span class="info-lbl">Statut</span><span class="info-val"><strong>${esc(status)}</strong></span></div>
           </div>
         </div>
 
-        ${o.proof?`
+        ${safeProof?`
         <div class="detail-box" style="margin-top:14px;">
           <h4>📸 Preuve de paiement</h4>
-          <img src="${o.proof}" onclick="window.open('${o.proof}','_blank')" style="max-width:100%;max-height:280px;border-radius:12px;margin-top:8px;cursor:zoom-in;border:1px solid var(--border);" title="Cliquer pour agrandir"/>
+          <img src="${safeProof}" onclick="window.open('${safeProof}','_blank')" style="max-width:100%;max-height:280px;border-radius:12px;margin-top:8px;cursor:zoom-in;border:1px solid var(--border);" title="Cliquer pour agrandir"/>
           <div style="font-size:11px;color:var(--muted);margin-top:6px;">Clique sur l'image pour l'agrandir.</div>
         </div>`:`
         <div class="detail-box" style="margin-top:14px;">
           <h4>📸 Preuve de paiement</h4>
-          <div style="font-size:13px;color:var(--orange);padding:8px 0;">⚠️ Aucune preuve enregistrée.</div>
+          <div style="font-size:13px;color:var(--orange);padding:8px 0;">⚠️ Aucune preuve valide enregistrée.</div>
         </div>`}
 
         <div class="detail-box" style="margin-top:14px;">
@@ -368,16 +376,16 @@ function renderOrders(orders){
         <div class="detail-box" style="margin-top:14px;">
           <h4>📝 Notes admin</h4>
           <div class="admin-note-wrap">
-            <textarea class="admin-note" id="note-${o.id}" placeholder="Tes notes internes (avancement, fichiers envoyés…)">${adminNote}</textarea>
+            <textarea class="admin-note" id="note-${o.id}" placeholder="Tes notes internes (avancement, fichiers envoyés…)">${esc(adminNote)}</textarea>
             <button class="btn-save-note" onclick="saveNote('${o.id}')">💾 Sauvegarder la note</button>
           </div>
         </div>
 
         <div class="order-actions">
-          ${waHref?`<a class="btn-action btn-wa" href="${waHref}" target="_blank">💬 Contacter le client</a>`:`<span class="btn-action" style="background:rgba(255,255,255,.04);border-color:var(--border);color:var(--muted);cursor:not-allowed;">💬 Pas de WhatsApp</span>`}
-          <button class="btn-action btn-copy" onclick="copyText('${o.whatsapp||''}','Numéro')">📱 Copier numéro</button>
-          <button class="btn-action btn-copy" onclick="copyText('${o.email||''}','Email')">📋 Copier email</button>
-          <button class="btn-action btn-copy" onclick="copyText('${o.pwd||''}','Mot de passe')">🔑 Copier mdp</button>
+          ${waHref?`<a class="btn-action btn-wa" href="${esc(waHref)}" target="_blank">💬 Contacter le client</a>`:`<span class="btn-action" style="background:rgba(255,255,255,.04);border-color:var(--border);color:var(--muted);cursor:not-allowed;">💬 Pas de WhatsApp</span>`}
+          <button class="btn-action btn-copy" onclick="copyField('${o.id}','whatsapp','Numéro')">📱 Copier numéro</button>
+          <button class="btn-action btn-copy" onclick="copyField('${o.id}','email','Email')">📋 Copier email</button>
+          <button class="btn-action btn-copy" onclick="copyField('${o.id}','pwd','Mot de passe')">🔑 Copier mdp</button>
           <button class="btn-action" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:var(--red);" onclick="deleteOrder('${o.id}')">🗑 Supprimer</button>
         </div>
       </div>
