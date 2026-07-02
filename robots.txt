@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /admin.html
 
 Sitemap: https://digitalelitesites.github.io/sorabot-digital/sitemap.xml
