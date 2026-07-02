@@ -151,6 +151,14 @@ body{font-family:ui-sans-serif,system-ui,sans-serif;background:var(--bg);color:v
       <button class="filter-btn" data-filter="Livré" onclick="setFilter('Livré',this)">🟢 Livrées</button>
     </div>
     <div class="orders-list" id="ordersList"></div>
+
+    <div style="margin-top:44px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        <h2 style="font-size:20px;font-weight:900">💬 Avis clients <span class="badge-count" id="reviewsBadge">0</span></h2>
+        <button class="btn-sm" onclick="loadReviews()">🔄 Actualiser</button>
+      </div>
+      <div class="orders-list" id="reviewsList"></div>
+    </div>
   </div>
 </div>
 
@@ -186,9 +194,9 @@ async function login(){
 function showDashboard(){
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('adminWrap').style.display='block';
-  loadOrders();
+  loadOrders(); loadReviews();
   if(!realtimeStarted){ subscribeRealtime(); realtimeStarted=true; }
-  if(!refreshTimer){ refreshTimer=setInterval(loadOrders, 25000); }
+  if(!refreshTimer){ refreshTimer=setInterval(()=>{ loadOrders(); loadReviews(); }, 25000); }
 }
 
 async function logout(){
@@ -202,6 +210,9 @@ async function logout(){
 function subscribeRealtime(){
   sb.channel('orders-realtime')
     .on('postgres_changes', { event:'*', schema:'public', table:'orders' }, ()=>{ loadOrders(); })
+    .subscribe();
+  sb.channel('reviews-realtime')
+    .on('postgres_changes', { event:'*', schema:'public', table:'reviews' }, ()=>{ loadReviews(); })
     .subscribe();
 }
 
@@ -457,6 +468,56 @@ function exportCSV(){
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='commandes-sorabot-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+}
+
+/* ---------- Avis clients (modération) ---------- */
+function reviewStars(rating){ const pct=Math.max(0,Math.min(100,(Number(rating)/10)*100)); return `<span style="position:relative;display:inline-block;font-size:16px;line-height:1;color:rgba(255,255,255,.16);letter-spacing:2px">★★★★★<span style="position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;color:var(--gold);width:${pct}%">★★★★★</span></span>`; }
+function reviewStatusBadge(st){
+  if(st==='approved') return '<span style="font-size:11px;font-weight:700;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green);padding:4px 10px;border-radius:999px">✅ Publié</span>';
+  if(st==='rejected') return '<span style="font-size:11px;font-weight:700;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);padding:4px 10px;border-radius:999px">✖ Rejeté</span>';
+  return '<span style="font-size:11px;font-weight:700;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.3);color:var(--orange);padding:4px 10px;border-radius:999px">🟠 En attente</span>';
+}
+async function loadReviews(){
+  const { data, error }=await sb.from('reviews').select('*').order('created_at',{ascending:false});
+  if(error){ console.warn('reviews:',error.message); return; }
+  renderReviews(data||[]);
+}
+function renderReviews(list){
+  const el=document.getElementById('reviewsList');
+  const pending=list.filter(r=>r.status==='pending').length;
+  document.getElementById('reviewsBadge').textContent=list.length+' avis'+(pending?(' · '+pending+' en attente'):'');
+  if(!list.length){ el.innerHTML='<div class="empty"><div class="empty__icon">💬</div><h3>Aucun avis</h3><p>Les avis clients arrivent ici pour modération.</p></div>'; return; }
+  el.innerHTML=list.map(r=>{
+    const st=r.status||'pending';
+    const d=r.created_at?new Date(r.created_at).toLocaleString('fr-FR'):'';
+    return `<div class="order-card" style="padding:16px 18px">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
+        <div>
+          <div style="font-weight:800;font-size:15px">${esc(r.prenom)} · <span style="color:var(--gold)">${Number(r.rating)}/10</span></div>
+          <div style="margin:5px 0">${reviewStars(r.rating)}</div>
+          <div style="font-size:11px;color:var(--muted)">${esc(d)}</div>
+        </div>
+        <div>${reviewStatusBadge(st)}</div>
+      </div>
+      ${r.comment?`<div style="font-size:14px;color:var(--txt);margin-top:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-style:italic">"${esc(r.comment)}"</div>`:'<div style="font-size:12px;color:var(--muted);margin-top:8px">(pas de commentaire)</div>'}
+      <div class="order-actions" style="margin-top:12px">
+        ${st!=='approved'?`<button class="btn-action" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--green)" onclick="setReviewStatus('${r.id}','approved')">✅ Approuver</button>`:''}
+        ${st!=='rejected'?`<button class="btn-action" style="background:rgba(251,146,60,.1);border-color:rgba(251,146,60,.3);color:var(--orange)" onclick="setReviewStatus('${r.id}','rejected')">✖ Rejeter</button>`:''}
+        <button class="btn-action" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:var(--red)" onclick="deleteReview('${r.id}')">🗑 Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function setReviewStatus(id,status){
+  const { error }=await sb.from('reviews').update({ status }).eq('id',id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  loadReviews(); showFlash(status==='approved'?'Avis approuvé ✓':'Avis rejeté');
+}
+async function deleteReview(id){
+  if(!confirm('Supprimer cet avis définitivement ?')) return;
+  const { error }=await sb.from('reviews').delete().eq('id',id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  loadReviews();
 }
 </script>
 </body>
