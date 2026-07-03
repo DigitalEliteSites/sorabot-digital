@@ -25,7 +25,9 @@ create table if not exists public.orders (
   proof text,
   status text default 'En attente',
   admin_note text,
-  details jsonb
+  details jsonb,
+  discount_code text,
+  discount_eur numeric default 0
 );
 
 -- 2) Sécurité : Row Level Security activée
@@ -110,6 +112,48 @@ drop policy if exists "admin delete reviews" on public.reviews;
 create policy "admin delete reviews"
   on public.reviews for delete to authenticated
   using (auth.jwt() ->> 'email' = 'VOTRE-EMAIL-ADMIN@exemple.com');
+
+-- =========================  CODES AFFILIÉS  =========================
+
+-- 5) Table des codes de réduction / affiliés
+create table if not exists public.discount_codes (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  code text not null unique,
+  affiliate_name text not null,
+  affiliate_whatsapp text,
+  discount_percent int not null default 0,
+  commission_percent int not null default 0,
+  product_ids jsonb not null default '[]'::jsonb,
+  active boolean not null default true,
+  constraint dc_code_len check (char_length(code) between 1 and 40),
+  constraint dc_name_len check (char_length(affiliate_name) between 1 and 60),
+  constraint dc_discount_range check (discount_percent between 0 and 100),
+  constraint dc_commission_range check (commission_percent between 0 and 100)
+);
+
+alter table public.discount_codes enable row level security;
+
+-- 5a) Gestion réservée à l'admin (aucune lecture directe par le client)
+drop policy if exists "admin select discount_codes" on public.discount_codes;
+create policy "admin select discount_codes" on public.discount_codes for select to authenticated using (auth.jwt() ->> 'email' = 'VOTRE-EMAIL-ADMIN@exemple.com');
+drop policy if exists "admin insert discount_codes" on public.discount_codes;
+create policy "admin insert discount_codes" on public.discount_codes for insert to authenticated with check (auth.jwt() ->> 'email' = 'VOTRE-EMAIL-ADMIN@exemple.com');
+drop policy if exists "admin update discount_codes" on public.discount_codes;
+create policy "admin update discount_codes" on public.discount_codes for update to authenticated using (auth.jwt() ->> 'email' = 'VOTRE-EMAIL-ADMIN@exemple.com') with check (auth.jwt() ->> 'email' = 'VOTRE-EMAIL-ADMIN@exemple.com');
+drop policy if exists "admin delete discount_codes" on public.discount_codes;
+create policy "admin delete discount_codes" on public.discount_codes for delete to authenticated using (auth.jwt() ->> 'email' = 'VOTRE-EMAIL-ADMIN@exemple.com');
+
+-- 5b) Fonction publique : le client valide un code et reçoit UNIQUEMENT
+--     la remise + les produits (jamais le nom de l'affiliée ni la commission).
+create or replace function public.validate_discount_code(p_code text)
+returns table(discount_percent int, product_ids jsonb)
+language sql security definer set search_path = public as $$
+  select discount_percent, product_ids from public.discount_codes
+  where active = true and upper(code) = upper(btrim(p_code)) limit 1;
+$$;
+revoke all on function public.validate_discount_code(text) from public;
+grant execute on function public.validate_discount_code(text) to anon, authenticated;
 
 -- =========================  TEMPS RÉEL  =========================
 do $$

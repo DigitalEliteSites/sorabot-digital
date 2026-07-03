@@ -486,6 +486,14 @@ a{color:inherit;text-decoration:none}
       <!-- STEP 1 -->
       <div id="step1">
         <div id="cartArea"></div>
+        <div class="form-group" id="codeBox" style="margin-top:6px">
+          <label>🎟️ Code de réduction (optionnel)</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="codeInput" placeholder="Ex : FATIMA" style="flex:1;text-transform:uppercase"/>
+            <button class="btn-secondary" style="padding:12px 20px;white-space:nowrap" onclick="applyCode()">Appliquer</button>
+          </div>
+          <div id="codeMsg" style="font-size:12px;font-weight:700;margin-top:6px"></div>
+        </div>
         <div style="display:flex;justify-content:flex-end;margin-top:8px">
           <button class="btn-submit" id="toStep2Btn" onclick="goStep(2)" style="width:auto;padding:13px 30px">Continuer →</button>
         </div>
@@ -686,13 +694,18 @@ let proofOcrDigits = '';
 const sb = (window.supabase && window.SB_URL) ? window.supabase.createClient(window.SB_URL, window.SB_ANON) : null;
 // Neutralise le HTML (anti-XSS) pour tout contenu venant des clients
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Code de réduction affilié (le nom/commission ne sont JAMAIS exposés ici)
+let appliedCode=''; let appliedDiscountPct=0; let appliedProductIds=null;
 
 /* ---------- Prix ---------- */
 function offerById(id){ for(const s of SERVICES){ const o=s.offers.find(o=>o.id===id); if(o) return {offer:o,service:s}; } return null; }
 function localNumeric(eur){ const v=eur*RATES[currency]; return BIG_CUR.includes(currency)?Math.round(v):Math.round(v*100)/100; }
 function fmt(eur){ if(!eur) return null; const v=localNumeric(eur); return BIG_CUR.includes(currency)? v.toLocaleString('fr-FR')+' '+SYM[currency] : v.toFixed(2).replace('.',',')+' '+SYM[currency]; }
 function selectedItems(){ const items=[]; SERVICES.forEach(s=>s.offers.forEach(o=>{ if(cart.has(o.id)) items.push({serviceId:s.id,service:s.name,id:o.id,name:o.name,price:o.price}); })); return items; }
-function cartTotalEur(){ return selectedItems().reduce((s,it)=>s+(it.price||0),0); }
+function cartOriginalEur(){ return selectedItems().reduce((s,it)=>s+(it.price||0),0); }
+function itemEligibleForCode(it){ if(!appliedProductIds || appliedProductIds.length===0) return true; return appliedProductIds.includes(it.id); }
+function cartDiscountEur(){ if(!appliedDiscountPct) return 0; let d=0; selectedItems().forEach(it=>{ if(itemEligibleForCode(it)) d+=(it.price||0)*appliedDiscountPct/100; }); return Math.round(d*100)/100; }
+function cartTotalEur(){ return Math.max(0, Math.round((cartOriginalEur()-cartDiscountEur())*100)/100); }
 
 /* ---------- Rendu services ---------- */
 function renderServices(){
@@ -738,15 +751,37 @@ function renderCart(){
   const area=document.getElementById('cartArea'); const items=selectedItems();
   if(!items.length){ area.innerHTML=`<div class="cart-empty">Ton panier est vide.<br><a href="#services" onclick="closeModal()">Choisir des offres →</a></div>`; document.getElementById('toStep2Btn').style.display='none'; return; }
   document.getElementById('toStep2Btn').style.display='inline-block';
-  const total=cartTotalEur();
+  const orig=cartOriginalEur(); const disc=cartDiscountEur(); const total=cartTotalEur();
   area.innerHTML=`<div class="cart-list">${items.map(it=>`
       <div class="cart-item"><div><div class="cart-item__svc">${it.service}</div><div class="cart-item__name">${it.name}</div></div>
       <div class="cart-item__price">${it.price>0?fmt(it.price):'Sur devis'}</div>
       <button class="cart-item__rm" onclick="removeFromCart('${it.id}')">✕</button></div>`).join('')}</div>
-    <div class="cart-total"><div class="cart-total__lbl">Total à payer</div>
-    <div class="cart-total__val">${total>0?fmt(total):'Sur devis'}<small>${total>0?'≈ '+total+' €':''}</small></div></div>`;
+    <div class="cart-total"><div style="width:100%">
+      ${disc>0?`<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px"><span>Sous-total</span><span>${fmt(orig)}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--green);font-weight:700;margin-bottom:8px"><span>🎟️ Code ${esc(appliedCode)}</span><span>- ${fmt(disc)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="cart-total__lbl">Total à payer</div>
+        <div class="cart-total__val">${total>0?fmt(total):'Sur devis'}<small>${total>0?'≈ '+(Math.round(total*100)/100)+' €':''}</small></div>
+      </div>
+    </div></div>`;
 }
 function removeFromCart(id){ cart.delete(id); renderServices(); updateBasket(); renderCart(); }
+
+async function applyCode(){
+  const code=(document.getElementById('codeInput').value||'').trim();
+  const msg=document.getElementById('codeMsg'); const setMsg=(t,c)=>{ msg.textContent=t; msg.style.color=c; };
+  if(!code){ appliedCode=''; appliedDiscountPct=0; appliedProductIds=null; setMsg('',''); renderCart(); updatePayAmount(); checkPaid(); return; }
+  if(!sb){ setMsg('Service indisponible.','var(--red)'); return; }
+  try{
+    const { data, error }=await sb.rpc('validate_discount_code',{ p_code: code });
+    if(error){ console.warn(error); setMsg('Erreur, réessaie.','var(--red)'); return; }
+    if(!data || !data.length){ appliedCode=''; appliedDiscountPct=0; appliedProductIds=null; setMsg('❌ Code invalide ou expiré.','var(--red)'); renderCart(); updatePayAmount(); checkPaid(); return; }
+    appliedCode=code.toUpperCase(); appliedDiscountPct=Number(data[0].discount_percent)||0; appliedProductIds=Array.isArray(data[0].product_ids)?data[0].product_ids:[];
+    const applies=selectedItems().some(itemEligibleForCode);
+    if(!applies) setMsg('⚠️ Ce code ne s\'applique à aucune offre de ton panier.','var(--orange)');
+    else setMsg('✅ Code appliqué : -'+appliedDiscountPct+'% sur les offres éligibles.','var(--green)');
+    renderCart(); updatePayAmount(); checkPaid();
+  }catch(e){ console.warn(e); setMsg('Erreur, réessaie.','var(--red)'); }
+}
 
 /* ---------- Modal ---------- */
 function openModal(){ document.getElementById('modalOverlay').classList.add('open'); _origGoStep(1); document.body.style.overflow='hidden'; }
@@ -865,6 +900,7 @@ function recheckProof(){
 async function submitOrder(){
   if(!validateInfos()){ goStep(2); return; }
   const total=cartTotalEur();
+  const discEur=cartDiscountEur();
   const items=selectedItems();
   if(!items.length){ alert('Ton panier est vide.'); goStep(1); return; }
 
@@ -896,7 +932,7 @@ async function submitOrder(){
 
   const order={ id:Date.now(), ref, date:new Date().toLocaleString('fr-FR'), prenom, nom, whatsapp, email, notes,
     plan:{ key:'', name:items.length+' offre'+(items.length>1?'s':''), priceEUR:total, priceLocal:(total>0?fmt(total):'Sur devis'), currency },
-    selections, items, proof:proofDataUrl, status:'En attente', details };
+    selections, items, proof:proofDataUrl, status:'En attente', details, discount_code:appliedCode||null, discount_eur:discEur };
 
   // 1) Sauvegarde locale
   try{ const all=JSON.parse(localStorage.getItem('sorabot_orders')||'[]'); all.push(order); localStorage.setItem('sorabot_orders',JSON.stringify(all)); }catch(err){ console.warn('localStorage:',err); }
@@ -905,7 +941,7 @@ async function submitOrder(){
   if(sb){
     try{
       const { error }=await sb.from('orders').insert({ ref, prenom, nom, whatsapp, email, notes,
-        total_eur:total, currency, price_local:order.plan.priceLocal, selections, items, proof:proofDataUrl, status:'En attente', details });
+        total_eur:total, currency, price_local:order.plan.priceLocal, selections, items, proof:proofDataUrl, status:'En attente', details, discount_code:appliedCode||null, discount_eur:discEur });
       if(error) console.warn('Supabase insert:',error.message);
     }catch(e){ console.warn('Supabase:',e); }
   }
@@ -923,6 +959,7 @@ async function submitOrder(){
   lines.push('');
   Object.entries(selections).forEach(([svc,arr])=>{ lines.push('• '+svc+' : '+arr.join(', ')); });
   lines.push('');
+  if(appliedCode) lines.push('🎟️ Code affilié : '+appliedCode+' (-'+appliedDiscountPct+'%)');
   lines.push('Total : '+(total>0?fmt(total)+' (≈ '+total+' €)':'Sur devis'));
   if(total>0) lines.push('Montant payé : '+paid+' '+SYM[currency]);
   if(notes) lines.push('Précisions : '+notes);
@@ -939,6 +976,7 @@ async function submitOrder(){
 
   // reset
   cart.clear(); updateBasket(); renderServices();
+  appliedCode=''; appliedDiscountPct=0; appliedProductIds=null; { const ci=document.getElementById('codeInput'); if(ci) ci.value=''; const cm=document.getElementById('codeMsg'); if(cm) cm.textContent=''; }
   proofDataUrl=''; document.getElementById('payConfirm').checked=false;
   proofCheck='pending'; proofOcrDigits=''; { const psb=document.getElementById('proofStatus'); if(psb) psb.style.display='none'; }
   document.getElementById('proofPlaceholder').style.display='block'; document.getElementById('proofPreview').style.display='none';

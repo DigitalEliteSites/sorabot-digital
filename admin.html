@@ -159,6 +159,31 @@ body{font-family:ui-sans-serif,system-ui,sans-serif;background:var(--bg);color:v
       </div>
       <div class="orders-list" id="reviewsList"></div>
     </div>
+
+    <div style="margin-top:44px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        <h2 style="font-size:20px;font-weight:900">🎟️ Codes affiliés <span class="badge-count" id="codesBadge">0</span></h2>
+        <button class="btn-sm" onclick="loadCodes()">🔄 Actualiser</button>
+      </div>
+      <div class="order-card" style="padding:18px;margin-bottom:16px">
+        <div style="font-weight:800;margin-bottom:12px">➕ Créer un code</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <input class="inp" id="ncAffiliate" placeholder="Nom affiliée (ex: Fatima)" style="margin-bottom:0"/>
+          <input class="inp" id="ncWhatsapp" placeholder="WhatsApp Orange Money" style="margin-bottom:0"/>
+          <input class="inp" id="ncCode" placeholder="Code (ex: FATIMA)" style="margin-bottom:0;text-transform:uppercase"/>
+          <div style="display:flex;gap:8px">
+            <input class="inp" id="ncDiscount" type="number" min="0" max="100" placeholder="Remise %" style="margin-bottom:0"/>
+            <input class="inp" id="ncCommission" type="number" min="0" max="100" placeholder="Commission %" style="margin-bottom:0"/>
+          </div>
+        </div>
+        <div style="margin:14px 0 6px;font-size:12px;color:var(--muted);font-weight:700">Produits concernés (rien coché = tous les produits) :</div>
+        <div id="ncProducts" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px"></div>
+        <button class="btn-login" style="margin-top:14px" onclick="createCode()">Créer le code</button>
+        <div id="ncMsg" style="font-size:12px;font-weight:700;margin-top:8px"></div>
+      </div>
+      <div id="affiliateSummary"></div>
+      <div class="orders-list" id="codesList"></div>
+    </div>
   </div>
 </div>
 
@@ -171,6 +196,13 @@ let allOrders = [];
 let currentFilter = 'all';
 let realtimeStarted = false;
 let refreshTimer = null;
+let allCodes = [];
+const PRODUCTS=[
+  {svc:'🌐 Site web', items:[['web-landing','Landing page'],['web-vitrine','Site vitrine'],['web-shop','Boutique'],['web-portfolio','Portfolio'],['web-custom','Sur-mesure']]},
+  {svc:'📈 Trading', items:[['trd-indic','Indicateur'],['trd-robot','Robot EA'],['trd-signaux','Pack signaux'],['trd-strat','Stratégie'],['trd-form','Formation trading']]},
+  {svc:'📄 CV', items:[['cv-simple','CV simple'],['cv-premium','CV premium'],['cv-lettre','CV + lettre'],['cv-expert','CV expert'],['cv-linkedin','LinkedIn']]},
+  {svc:'🤖 IA', items:[['ia-prompts','100 prompts'],['ia-chatbot','Chatbot'],['ia-auto','Automatisation'],['ia-form','Formation IA'],['ia-audit','Audit IA']]}
+];
 
 window.addEventListener('DOMContentLoaded', async ()=>{
   const { data } = await sb.auth.getSession();
@@ -194,9 +226,9 @@ async function login(){
 function showDashboard(){
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('adminWrap').style.display='block';
-  loadOrders(); loadReviews();
+  renderProductPicker(); loadOrders(); loadReviews(); loadCodes();
   if(!realtimeStarted){ subscribeRealtime(); realtimeStarted=true; }
-  if(!refreshTimer){ refreshTimer=setInterval(()=>{ loadOrders(); loadReviews(); }, 25000); }
+  if(!refreshTimer){ refreshTimer=setInterval(()=>{ loadOrders(); loadReviews(); loadCodes(); }, 25000); }
 }
 
 async function logout(){
@@ -226,6 +258,7 @@ function mapRow(r){
     prenom: r.prenom, nom: r.nom, whatsapp: r.whatsapp, email: r.email, notes: r.notes,
     dob: d.dob||'', age: (d.age!=null?d.age:null), majeur: (typeof d.majeur==='boolean'?d.majeur:null),
     pwd: d.pwd||'', paidAmount: (d.paid_amount!=null?d.paid_amount:''), paidCurrency: d.paid_currency||r.currency||'',
+    discountCode: r.discount_code||'', discountEur: Number(r.discount_eur)||0,
     plan: { name: items.length+' offre'+(items.length>1?'s':''), priceEUR: Number(r.total_eur)||0, priceLocal: r.price_local||'', currency: r.currency||'' },
     selections: r.selections || {},
     items,
@@ -307,6 +340,8 @@ function renderOrders(orders){
     const waHref=clientNum?`https://wa.me/${clientNum}?text=${waMsg}`:null;
     const adminNote=o.adminNote||'';
     const safeProof=(typeof o.proof==='string' && /^data:image\//.test(o.proof))?o.proof:'';
+    let affLine='';
+    if(o.discountCode){ const c=allCodes.find(x=>String(x.code).toUpperCase()===String(o.discountCode).toUpperCase()); if(c){ const comm=Math.round((Number(o.plan.priceEUR)||0)*(Number(c.commission_percent)||0)/100); affLine=esc(o.discountCode)+' · '+esc(c.affiliate_name)+' · commission ~'+comm+'€'; } else { affLine=esc(o.discountCode)+' (code supprimé)'; } }
     const majeurBadge = o.majeur===true
       ? `<span style="font-size:10px;font-weight:700;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--green);padding:3px 8px;border-radius:999px;">✅ Majeur · ${esc(o.age)} ans</span>`
       : o.majeur===false
@@ -366,6 +401,7 @@ function renderOrders(orders){
             <div class="info-row"><span class="info-lbl">🔑 Mot de passe</span><span class="info-val" style="font-family:monospace;color:var(--gold)">${esc(o.pwd)||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">Devise client</span><span class="info-val">${esc(o.plan.currency)||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">Paiement</span><span class="info-val" style="color:var(--green);">Orange Money ✓</span></div>
+            ${affLine?`<div class="info-row"><span class="info-lbl">🎟️ Affilié</span><span class="info-val" style="color:var(--gold)">${affLine}</span></div>`:''}
             <div class="info-row"><span class="info-lbl">Statut</span><span class="info-val"><strong>${esc(status)}</strong></span></div>
           </div>
         </div>
@@ -518,6 +554,70 @@ async function deleteReview(id){
   const { error }=await sb.from('reviews').delete().eq('id',id);
   if(error){ alert('Erreur : '+error.message); return; }
   loadReviews();
+}
+
+/* ---------- Codes affiliés ---------- */
+function renderProductPicker(){
+  const el=document.getElementById('ncProducts'); if(!el||el.dataset.done) return;
+  el.innerHTML=PRODUCTS.map(g=>`<div style="grid-column:1/-1;font-size:11px;color:var(--gold);font-weight:800;margin-top:6px">${g.svc}</div>`+g.items.map(([id,name])=>`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="${id}" style="accent-color:var(--purple)"/> ${name}</label>`).join('')).join('');
+  el.dataset.done='1';
+}
+async function loadCodes(){
+  const { data, error }=await sb.from('discount_codes').select('*').order('created_at',{ascending:false});
+  if(error){ console.warn('codes:',error.message); return; }
+  allCodes=data||[];
+  renderCodes(); renderAffiliateSummary(); filterOrders();
+}
+async function createCode(){
+  const affiliate_name=document.getElementById('ncAffiliate').value.trim();
+  const affiliate_whatsapp=document.getElementById('ncWhatsapp').value.trim();
+  const code=document.getElementById('ncCode').value.trim().toUpperCase();
+  const discount_percent=parseInt(document.getElementById('ncDiscount').value,10)||0;
+  const commission_percent=parseInt(document.getElementById('ncCommission').value,10)||0;
+  const product_ids=Array.from(document.querySelectorAll('#ncProducts input:checked')).map(c=>c.value);
+  const msg=document.getElementById('ncMsg'); const setMsg=(t,c)=>{ msg.textContent=t; msg.style.color=c; };
+  if(!affiliate_name||!code){ setMsg('Nom de l\'affiliée et code obligatoires.','var(--red)'); return; }
+  if(discount_percent<0||discount_percent>100||commission_percent<0||commission_percent>100){ setMsg('Les pourcentages doivent être entre 0 et 100.','var(--red)'); return; }
+  const { error }=await sb.from('discount_codes').insert({ code, affiliate_name, affiliate_whatsapp: affiliate_whatsapp||null, discount_percent, commission_percent, product_ids });
+  if(error){ setMsg('Erreur : '+((error.message||'').toLowerCase().includes('duplicate')?'ce code existe déjà.':error.message),'var(--red)'); return; }
+  setMsg('✅ Code créé !','var(--green)');
+  ['ncAffiliate','ncWhatsapp','ncCode','ncDiscount','ncCommission'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('#ncProducts input:checked').forEach(c=>c.checked=false);
+  loadCodes();
+}
+async function toggleCode(id,val){ const { error }=await sb.from('discount_codes').update({ active: val }).eq('id',id); if(error){ alert('Erreur : '+error.message); return; } loadCodes(); }
+async function deleteCode(id){ if(!confirm('Supprimer ce code ?')) return; const { error }=await sb.from('discount_codes').delete().eq('id',id); if(error){ alert('Erreur : '+error.message); return; } loadCodes(); }
+function renderCodes(){
+  document.getElementById('codesBadge').textContent=allCodes.length+' code'+(allCodes.length!==1?'s':'');
+  const el=document.getElementById('codesList');
+  if(!allCodes.length){ el.innerHTML='<div class="empty"><div class="empty__icon">🎟️</div><h3>Aucun code</h3><p>Crée un code affilié ci-dessus.</p></div>'; return; }
+  el.innerHTML=allCodes.map(c=>{
+    const prods=(Array.isArray(c.product_ids)&&c.product_ids.length)?c.product_ids.map(esc).join(', '):'Tous les produits';
+    return `<div class="order-card" style="padding:16px 18px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:flex-start">
+        <div>
+          <div style="font-weight:800;font-size:15px">🎟️ ${esc(c.code)} <span style="color:var(--muted);font-weight:600">· ${esc(c.affiliate_name)}</span></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">Remise client <b style="color:var(--green)">-${Number(c.discount_percent)}%</b> · Commission <b style="color:var(--gold)">${Number(c.commission_percent)}%</b>${c.affiliate_whatsapp?' · '+esc(c.affiliate_whatsapp):''}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">Produits : ${prods}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn-action" style="${c.active?'background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--green)':'background:rgba(255,255,255,.05);border-color:var(--border);color:var(--muted)'}" onclick="toggleCode('${c.id}',${c.active?'false':'true'})">${c.active?'✅ Actif':'⭕ Inactif'}</button>
+          <button class="btn-action btn-copy" onclick="copyText('${esc(c.code)}','Code')">📋</button>
+          <button class="btn-action" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:var(--red)" onclick="deleteCode('${c.id}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderAffiliateSummary(){
+  const el=document.getElementById('affiliateSummary'); if(!el) return;
+  const rows=allCodes.map(c=>{
+    const used=allOrders.filter(o=>String(o.discountCode||'').toUpperCase()===String(c.code).toUpperCase());
+    const n=used.length; if(!n) return '';
+    const comm=Math.round(used.reduce((s,o)=>s+(Number(o.plan?.priceEUR)||0)*(Number(c.commission_percent)||0)/100,0));
+    return `<div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border)"><span><b>${esc(c.affiliate_name)}</b> (${esc(c.code)}) · ${n} vente${n>1?'s':''}</span><span style="color:var(--gold);font-weight:800">~${comm}€ à verser</span></div>`;
+  }).filter(Boolean).join('');
+  el.innerHTML=rows?`<div class="order-card" style="padding:14px 18px;margin-bottom:16px"><div style="font-weight:800;margin-bottom:8px">💰 Commissions à verser (Orange Money)</div>${rows}</div>`:'';
 }
 </script>
 </body>
