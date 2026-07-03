@@ -494,6 +494,8 @@ a{color:inherit;text-decoration:none}
 
 <a href="https://wa.me/224625914607" target="_blank" style="position:fixed;bottom:22px;left:22px;z-index:200;width:54px;height:54px;background:#25d366;border-radius:50%;display:grid;place-items:center;font-size:26px;box-shadow:0 4px 22px rgba(37,211,102,.45);text-decoration:none" title="WhatsApp">💬</a>
 
+<button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Retour en haut" style="position:fixed;bottom:88px;left:24px;z-index:200;width:48px;height:48px;border-radius:50%;background:var(--card);border:1px solid var(--gold);color:var(--gold);font-size:20px;font-weight:800;cursor:pointer;display:none;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.35)">↑</button>
+
 <div class="toast" id="toast"></div>
 
 <!-- ORDER MODAL -->
@@ -1103,6 +1105,7 @@ async function submitReview(){
 /* ---------- Init ---------- */
 document.getElementById('year').textContent=new Date().getFullYear();
 renderServices(); updateBasket(); startDeliveryWatch(); initStarInput(); loadReviews();
+window.addEventListener('scroll',()=>{ const b=document.getElementById('scrollTop'); if(b) b.style.display=(window.scrollY>400?'grid':'none'); },{passive:true});
 /* Révélation élégante au défilement (ajoutée par JS => sûr si JS absent) */
 (function(){
   if(!('IntersectionObserver' in window)) return;
