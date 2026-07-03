@@ -489,7 +489,7 @@ a{color:inherit;text-decoration:none}
         <div class="form-group" id="codeBox" style="margin-top:6px">
           <label>🎟️ Code de réduction (optionnel)</label>
           <div style="display:flex;gap:8px">
-            <input type="text" id="codeInput" placeholder="Ex : FATIMA" style="flex:1;text-transform:uppercase"/>
+            <input type="text" id="codeInput" placeholder="Ton code" style="flex:1;text-transform:uppercase"/>
             <button class="btn-secondary" style="padding:12px 20px;white-space:nowrap" onclick="applyCode()">Appliquer</button>
           </div>
           <div id="codeMsg" style="font-size:12px;font-weight:700;margin-top:6px"></div>
@@ -502,8 +502,8 @@ a{color:inherit;text-decoration:none}
       <!-- STEP 2 -->
       <div id="step2" style="display:none">
         <div class="form-row" style="margin-bottom:17px">
-          <div class="form-group" style="margin-bottom:0"><label>Prénom *</label><input type="text" id="fPrenom" placeholder="Ex : Amadou"/></div>
-          <div class="form-group" style="margin-bottom:0"><label>Nom *</label><input type="text" id="fNom" placeholder="Ex : Sewa"/></div>
+          <div class="form-group" style="margin-bottom:0"><label>Prénom *</label><input type="text" id="fPrenom" placeholder="Ton prénom"/></div>
+          <div class="form-group" style="margin-bottom:0"><label>Nom *</label><input type="text" id="fNom" placeholder="Ton nom"/></div>
         </div>
         <div class="form-group">
           <label>📅 Date de naissance *</label>
@@ -517,7 +517,7 @@ a{color:inherit;text-decoration:none}
         </div>
         <div class="form-group">
           <label>📧 Ton email *</label>
-          <input type="email" id="fEmail" placeholder="ton@email.com" oninput="checkEmail()"/>
+          <input type="email" id="fEmail" placeholder="Ton adresse email" oninput="checkEmail()"/>
           <div class="hint">En <b>minuscules</b> de préférence. Sert à la livraison et au suivi.</div>
         </div>
         <div class="form-group">
