@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Sorabot Digital — Services premium : Web · Trading · CV · IA</title>
-<meta name="description" content="Création de site web, robots & indicateurs de trading, CV professionnels et solutions IA. Un travail haut de gamme, livré en 50h. Paiement Orange Money."/>
+<meta name="description" content="Création de site web, robots & indicateurs de trading, CV professionnels et solutions IA. Un travail haut de gamme, livré en 48h. Paiement Orange Money."/>
 <meta name="keywords" content="Sorabot Digital, création site web, robot de trading, indicateur trading, CV professionnel, expert IA, chatbot, automatisation, Orange Money, Guinée, Afrique"/>
 <meta name="author" content="Sorabot Digital"/>
 <meta name="robots" content="index, follow"/>
@@ -15,12 +15,12 @@
 <meta property="og:type" content="website"/>
 <meta property="og:site_name" content="Sorabot Digital"/>
 <meta property="og:title" content="Sorabot Digital — Sites web, Trading, CV & IA sur mesure"/>
-<meta property="og:description" content="Des services digitaux premium livrés en 50h : site web, robots de trading, CV pro et solutions IA. Paiement Orange Money."/>
+<meta property="og:description" content="Des services digitaux premium livrés en 48h : site web, robots de trading, CV pro et solutions IA. Paiement Orange Money."/>
 <meta property="og:url" content="https://digitalelitesites.github.io/sorabot-digital/"/>
 <meta property="og:locale" content="fr_FR"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="Sorabot Digital — Web · Trading · CV · IA"/>
-<meta name="twitter:description" content="Services digitaux premium livrés en 50h. Paiement Orange Money."/>
+<meta name="twitter:description" content="Services digitaux premium livrés en 48h. Paiement Orange Money."/>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"ProfessionalService","name":"Sorabot Digital","description":"Création de site web, robots & indicateurs de trading, CV professionnels et solutions IA.","url":"https://digitalelitesites.github.io/sorabot-digital/","telephone":"+224625914607","priceRange":"€€","areaServed":"Worldwide","availableLanguage":"French","serviceType":["Création de site web","Trading - robots et indicateurs","Création de CV","Solutions IA"],"contactPoint":{"@type":"ContactPoint","telephone":"+224625914607","contactType":"customer service","availableLanguage":"French"}}
 </script>
@@ -101,11 +101,15 @@ section[id],.svc-block{scroll-margin-top:110px}
 .spot::before{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .5s var(--ease);pointer-events:none;
   background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(124,77,255,.18),transparent 65%)}
 .spot:hover::before,.spot.tapped::before{opacity:1}
+/* spotlight resserré pour les petits éléments */
+.stat.spot::before,.currency-box.spot::before,.icon-pastille.spot::before{background:radial-gradient(150px circle at var(--mx,50%) var(--my,50%),rgba(124,77,255,.28),transparent 70%)}
 
 /* ===== ICÔNES : pastilles de verre rondes ===== */
-.icon-pastille{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;color:var(--violet3);
+.icon-pastille{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;color:var(--violet3);position:relative;overflow:hidden;
   background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.14),rgba(255,255,255,.04) 58%);
-  border:1px solid var(--border2);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 10px 26px rgba(0,0,0,.35),0 0 22px rgba(124,77,255,.14)}
+  border:1px solid var(--border2);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 10px 26px rgba(0,0,0,.35),0 0 22px rgba(124,77,255,.14);
+  transition:border-color .3s,box-shadow .3s,transform .3s var(--ease)}
+.icon-pastille:hover{border-color:var(--brd-violet);transform:scale(1.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 10px 26px rgba(0,0,0,.35),0 0 34px rgba(124,77,255,.45)}
 .icon-pastille .ic{width:28px;height:28px}
 .icon-pastille--sm{width:48px;height:48px}
 .icon-pastille--sm .ic{width:22px;height:22px}
@@ -154,9 +158,8 @@ section[id],.svc-block{scroll-margin-top:110px}
 .hero-orb img{position:relative;width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;animation:orbspin 20s linear infinite;will-change:transform;user-select:none;-webkit-user-drag:none}
 .hero-orb.no-img img{display:none}
 .orb-fallback{display:none}
-.hero-orb.no-img .orb-fallback{display:block;position:absolute;inset:14%;border-radius:50%;
-  background:radial-gradient(circle at 34% 30%,rgba(157,107,255,.9),rgba(108,60,233,.55) 38%,rgba(20,12,44,.9) 78%);
-  box-shadow:0 0 90px rgba(124,77,255,.5),inset 0 0 60px rgba(157,107,255,.35);animation:breathe 6.5s ease-in-out infinite}
+.hero-orb.no-img .orb-fallback{display:block;position:relative;width:100%;height:100%;filter:drop-shadow(0 0 30px rgba(124,77,255,.35))}
+.orb-fallback .spin{transform-box:fill-box;transform-origin:center;animation:orbspin 20s linear infinite;will-change:transform}
 @keyframes orbspin{to{transform:rotate(360deg)}}
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.12);opacity:1}}
 .hero h1{font-size:clamp(38px,6vw,70px);font-weight:800;line-height:1.05;letter-spacing:-1.5px;max-width:920px;margin:0 auto 20px}
@@ -166,7 +169,8 @@ section[id],.svc-block{scroll-margin-top:110px}
 .hero__sub{font-size:17.5px;color:var(--soft);max-width:600px;margin:0 auto 38px;line-height:1.75}
 .hero__actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:50px}
 .hero__stats{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.stat{text-align:center;background:var(--glass);border:1px solid var(--border);border-radius:18px;padding:14px 26px;backdrop-filter:blur(12px)}
+.stat{text-align:center;background:var(--glass);border:1px solid var(--border);border-radius:18px;padding:14px 26px;backdrop-filter:blur(12px);position:relative;overflow:hidden;transition:transform .35s var(--ease),border-color .3s,box-shadow .35s}
+.stat:hover{transform:translateY(-4px);border-color:var(--brd-violet);box-shadow:var(--glow)}
 .stat__num{font-size:30px;font-weight:800;color:var(--txt);letter-spacing:-.5px}
 .stat__lbl{font-size:10.5px;color:var(--muted);margin-top:2px;letter-spacing:1.4px;font-weight:600}
 
@@ -199,9 +203,12 @@ section[id],.svc-block{scroll-margin-top:110px}
 
 /* ===== DEVISE ===== */
 .currency-row{text-align:center;margin-bottom:34px}
-.currency-row label{font-size:13px;color:var(--muted);font-weight:700;margin-right:10px}
-.currency-row select{background:var(--card);border:1px solid var(--border2);color:var(--txt);border-radius:12px;padding:10px 16px;font-size:14px;font-weight:700;outline:none;cursor:pointer;font-family:inherit;transition:.2s}
-.currency-row select:focus{border-color:var(--brd-violet);box-shadow:0 0 0 3px rgba(124,77,255,.2)}
+.currency-box{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;padding:8px 12px 8px 18px;border-radius:999px;background:var(--glass);border:1px solid var(--border);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08);transition:border-color .3s,box-shadow .3s}
+.currency-box:hover{border-color:var(--brd-violet);box-shadow:var(--glow),inset 0 1px 0 rgba(255,255,255,.08)}
+.currency-box label{font-size:13px;color:var(--muted);font-weight:700}
+.currency-box select{background:transparent;border:none;color:var(--txt);border-radius:999px;padding:6px 8px;font-size:14px;font-weight:700;outline:none;cursor:pointer;font-family:inherit;transition:.2s}
+.currency-box select:focus-visible{outline:2px solid var(--violet2);outline-offset:2px}
+.currency-box select option{background:var(--card);color:var(--txt)}
 
 /* ===== CHOIX DE SERVICE ===== */
 .svc-chooser{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:60px}
@@ -471,9 +478,70 @@ section[id],.svc-block{scroll-margin-top:110px}
   <div class="hero-orb" aria-hidden="true">
     <span class="orb-halo"></span>
     <img src="orbe-sorabot.png" alt="" loading="eager" decoding="async" onerror="this.parentElement.classList.add('no-img')"/>
-    <span class="orb-fallback"></span>
+    <svg class="orb-fallback" viewBox="0 0 400 400">
+      <defs>
+        <filter id="oglow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="3.2" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <radialGradient id="ovtx"><stop offset="0%" stop-color="#ffffff"/><stop offset="35%" stop-color="#cbb7ff"/><stop offset="100%" stop-color="rgba(124,77,255,0)"/></radialGradient>
+        <linearGradient id="oface" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(157,107,255,.18)"/><stop offset="100%" stop-color="rgba(108,60,233,.03)"/></linearGradient>
+      </defs>
+      <!-- anneaux orbitaux -->
+      <g fill="none" stroke="#8b5ff6">
+        <ellipse cx="200" cy="212" rx="186" ry="58" stroke-width="1" opacity=".45" transform="rotate(-10 200 212)"/>
+        <ellipse cx="200" cy="205" rx="163" ry="76" stroke-width=".8" opacity=".3" transform="rotate(14 200 205)"/>
+      </g>
+      <g fill="url(#ovtx)">
+        <circle cx="17" cy="244" r="4"/><circle cx="383" cy="180" r="3.4"/><circle cx="300" cy="245" r="2.6"/>
+        <circle cx="360" cy="240" r="2.6"/><circle cx="40" cy="160" r="3"/><circle cx="182" cy="274" r="2.2"/>
+      </g>
+      <!-- satellites : bougies / fenêtre web / CV / réseau -->
+      <g filter="url(#oglow)">
+        <g stroke="#a684ff" stroke-width="1.5" stroke-linecap="round">
+          <line x1="234" y1="72" x2="234" y2="96"/><line x1="248" y1="58" x2="248" y2="88"/><line x1="262" y1="50" x2="262" y2="76"/><line x1="276" y1="36" x2="276" y2="66"/><line x1="290" y1="24" x2="290" y2="52"/><line x1="304" y1="14" x2="304" y2="42"/>
+        </g>
+        <g fill="rgba(157,107,255,.85)">
+          <rect x="230" y="78" width="8" height="13" rx="1.5"/><rect x="244" y="64" width="8" height="15" rx="1.5"/><rect x="258" y="55" width="8" height="13" rx="1.5"/><rect x="272" y="41" width="8" height="16" rx="1.5"/><rect x="286" y="28" width="8" height="15" rx="1.5"/><rect x="300" y="18" width="8" height="14" rx="1.5"/>
+        </g>
+        <g fill="none" stroke="#a684ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="24" y="178" width="66" height="50" rx="7"/><path d="M24 192h66"/>
+          <rect x="316" y="148" width="60" height="76" rx="8"/><circle cx="334" cy="168" r="9"/><path d="M350 162h18M350 172h18"/><path d="M332 196h34M332 206h34M332 216h24"/>
+        </g>
+        <g fill="#a684ff"><circle cx="31" cy="185" r="1.7"/><circle cx="38" cy="185" r="1.7"/><circle cx="45" cy="185" r="1.7"/><circle cx="325" cy="196" r="1.8"/><circle cx="325" cy="206" r="1.8"/><circle cx="325" cy="216" r="1.8"/></g>
+        <g stroke="#8b5ff6" stroke-width=".9" opacity=".75" fill="none">
+          <path d="M160 338 190 326 222 334 246 346M160 338 172 360 204 354 232 364M190 326 172 360M190 326 204 354M222 334 204 354M222 334 232 364M246 346 232 364M172 360 190 380M204 354 190 380M204 354 218 382M232 364 218 382"/>
+        </g>
+        <g fill="#7C4DFF"><circle cx="160" cy="338" r="4"/><circle cx="190" cy="326" r="4.5"/><circle cx="222" cy="334" r="4"/><circle cx="246" cy="346" r="4.5"/><circle cx="172" cy="360" r="4"/><circle cx="204" cy="354" r="4.5"/><circle cx="232" cy="364" r="4"/><circle cx="190" cy="380" r="4"/><circle cx="218" cy="382" r="4"/></g>
+      </g>
+      <!-- icosaèdre en rotation -->
+      <g class="spin">
+        <g fill="url(#oface)" stroke="none">
+          <polygon points="200,50 330,125 200,120" opacity=".5"/>
+          <polygon points="330,125 269,240 200,120" opacity=".9"/>
+          <polygon points="330,125 330,275 269,240" opacity=".4"/>
+          <polygon points="330,275 200,350 269,240" opacity=".7"/>
+          <polygon points="200,350 131,240 269,240" opacity=".35"/>
+          <polygon points="200,350 70,275 131,240" opacity=".6"/>
+          <polygon points="70,275 70,125 131,240" opacity=".45"/>
+          <polygon points="70,125 200,120 131,240" opacity=".8"/>
+          <polygon points="70,125 200,50 200,120" opacity=".55"/>
+          <polygon points="200,120 269,240 131,240" opacity=".25"/>
+        </g>
+        <g fill="none" stroke="#9D6BFF" stroke-width="1.5" stroke-linejoin="round" filter="url(#oglow)" opacity=".95">
+          <path d="M200 50L330 125L330 275L200 350L70 275L70 125Z"/>
+          <path d="M200 50L200 120M330 125L200 120M330 125L269 240M330 275L269 240M200 350L269 240M200 350L131 240M70 275L131 240M70 125L131 240M70 125L200 120"/>
+          <path d="M200 120L269 240L131 240Z"/>
+        </g>
+        <g fill="url(#ovtx)">
+          <circle cx="200" cy="50" r="6"/><circle cx="330" cy="125" r="5"/><circle cx="330" cy="275" r="6.5"/><circle cx="200" cy="350" r="5.5"/><circle cx="70" cy="275" r="5"/><circle cx="70" cy="125" r="6"/>
+          <circle cx="200" cy="120" r="7"/><circle cx="269" cy="240" r="7.5"/><circle cx="131" cy="240" r="6.5"/>
+        </g>
+        <g fill="#ffffff"><circle cx="200" cy="120" r="1.8"/><circle cx="269" cy="240" r="2"/><circle cx="131" cy="240" r="1.6"/><circle cx="330" cy="275" r="1.6"/><circle cx="200" cy="50" r="1.4"/></g>
+      </g>
+    </svg>
   </div>
-  <h1>L'excellence digitale,<br><span class="g serif">livrée en 50 heures</span></h1>
+  <h1>L'excellence digitale,<br><span class="g serif">livrée en 48 heures</span></h1>
   <div class="hero__rule"></div>
   <p class="hero__sub">Sites web, robots & indicateurs de trading, CV professionnels et solutions IA. Un travail soigné, premium, pensé pour te démarquer — sans prise de tête.</p>
   <div class="hero__actions">
@@ -482,7 +550,7 @@ section[id],.svc-block{scroll-margin-top:110px}
   </div>
   <div class="hero__stats">
     <div class="stat"><div class="stat__num">4</div><div class="stat__lbl">DOMAINES D'EXPERTISE</div></div>
-    <div class="stat"><div class="stat__num">50h</div><div class="stat__lbl">DÉLAI DE LIVRAISON</div></div>
+    <div class="stat"><div class="stat__num">48h</div><div class="stat__lbl">DÉLAI DE LIVRAISON</div></div>
     <div class="stat"><div class="stat__num">100%</div><div class="stat__lbl">SUR MESURE</div></div>
     <div class="stat"><div class="stat__num">∞</div><div class="stat__lbl">RÉVISIONS</div></div>
   </div>
@@ -498,6 +566,7 @@ section[id],.svc-block{scroll-margin-top:110px}
     </div>
 
     <div class="currency-row">
+      <div class="currency-box">
       <label>Ta devise :</label>
       <select id="currencySelect" onchange="onCurrencyChange()">
         <option value="GNF">🇬🇳 Franc Guinéen (GNF)</option>
@@ -510,6 +579,7 @@ section[id],.svc-block{scroll-margin-top:110px}
         <option value="USD">🇺🇸 Dollar US (USD)</option>
         <option value="CAD">🇨🇦 Dollar Canadien (CAD)</option>
       </select>
+      </div>
     </div>
 
     <div class="svc-chooser" id="svcChooser"></div>
@@ -517,7 +587,7 @@ section[id],.svc-block{scroll-margin-top:110px}
 
     <div style="text-align:center;margin-top:22px">
       <button class="btn-primary" onclick="openModal()"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Voir ma commande</button>
-      <p style="margin-top:13px;font-size:13px;color:var(--muted)">Sélectionne autant d'offres que tu veux · Paiement Orange Money · Livraison 50h</p>
+      <p style="margin-top:13px;font-size:13px;color:var(--muted)">Sélectionne autant d'offres que tu veux · Paiement Orange Money · Livraison 48h</p>
     </div>
   </div>
 </section>
@@ -534,7 +604,7 @@ section[id],.svc-block{scroll-margin-top:110px}
       <div class="step"><div class="step__num">1</div><h3>Choisis ton service</h3><p>Site web, trading, CV ou IA — clique sur le domaine qui t'intéresse et explore les offres.</p></div>
       <div class="step"><div class="step__num">2</div><h3>Sélectionne tes offres</h3><p>Ajoute une ou plusieurs offres à ta commande. Le prix s'affiche dans ta devise locale.</p></div>
       <div class="step"><div class="step__num">3</div><h3>Paie via Orange Money</h3><p>Tu laisses tes infos, tu paies le montant exact et tu ajoutes ta preuve de paiement.</p></div>
-      <div class="step"><div class="step__num">4</div><h3>Reçois en 50h</h3><p>Un compte à rebours démarre. Je te recontacte sur WhatsApp et je livre dans le délai.</p></div>
+      <div class="step"><div class="step__num">4</div><h3>Reçois en 48h</h3><p>Un compte à rebours démarre. Je te recontacte sur WhatsApp et je livre dans le délai.</p></div>
     </div>
   </div>
 </section>
@@ -548,7 +618,7 @@ section[id],.svc-block{scroll-margin-top:110px}
       <p>Du premium, livré sérieusement, avec un vrai suivi humain.</p>
     </div>
     <div class="trust-grid">
-      <div class="trust-item"><div class="icon-pastille"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div><h4>Livraison 50h</h4><p>Un délai clair et tenu, avec un compte à rebours visible côté client.</p></div>
+      <div class="trust-item"><div class="icon-pastille"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div><h4>Livraison 48h</h4><p>Un délai clair et tenu, avec un compte à rebours visible côté client.</p></div>
       <div class="trust-item"><div class="icon-pastille"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg></div><h4>Qualité premium</h4><p>Un rendu soigné, moderne et haut de gamme, qui inspire confiance.</p></div>
       <div class="trust-item"><div class="icon-pastille"><svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 8.5-8.5h.5a8.5 8.5 0 0 1 8 8z"/></svg></div><h4>Suivi WhatsApp</h4><p>Je reste joignable à chaque étape pour tes questions et ajustements.</p></div>
       <div class="trust-item"><div class="icon-pastille"><svg class="ic" viewBox="0 0 24 24"><path d="M18.2 8c5.1 0 5.1 8 0 8-5.1 0-7.1-8-12.7-8-4.6 0-4.6 8 0 8 5.6 0 7.6-8 12.7-8z"/></svg></div><h4>Révisions incluses</h4><p>On peaufine ensemble jusqu'à ce que ce soit exactement comme tu le veux.</p></div>
@@ -598,7 +668,7 @@ section[id],.svc-block{scroll-margin-top:110px}
   <div class="container">
     <div class="cta-band">
       <h2>Prêt à passer au <span class="g serif">niveau supérieur</span> ?</h2>
-      <p>Choisis ton offre, paie via Orange Money, et reçois un travail premium en 50h.</p>
+      <p>Choisis ton offre, paie via Orange Money, et reçois un travail premium en 48h.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
         <button class="btn-primary" onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z"/></svg>Voir les services</button>
         <a class="btn-secondary" href="https://wa.me/224625914607" target="_blank"><svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 8.5-8.5h.5a8.5 8.5 0 0 1 8 8z"/></svg>+224 625 91 46 07</a>
@@ -769,7 +839,7 @@ section[id],.svc-block{scroll-margin-top:110px}
         <div class="order-ref" id="orderRef">SRB-000000</div>
         <div class="success-cd">
           <div class="success-cd__lbl">⏳ Livraison estimée dans</div>
-          <div class="success-cd__val" id="successCountdown">50h 00m 00s</div>
+          <div class="success-cd__val" id="successCountdown">48h 00m 00s</div>
         </div>
         <p>Merci ! Clique ci-dessous pour m'envoyer ta commande + la capture du paiement sur WhatsApp. Je te recontacte très vite.</p>
         <a class="wa-btn" id="successWa" href="#" target="_blank"><svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 8.5-8.5h.5a8.5 8.5 0 0 1 8 8z"/></svg>Envoyer sur WhatsApp</a>
@@ -854,7 +924,7 @@ const RATES = {GNF:9700, EUR:1, XOF:655.957, XAF:655.957, MAD:10.7, DZD:145, TND
 const SYM   = {GNF:'GNF', EUR:'€', XOF:'FCFA', XAF:'FCFA', MAD:'MAD', DZD:'DA', TND:'TND', USD:'$', CAD:'C$'};
 const BIG_CUR = ['GNF','XOF','XAF','DZD'];
 const WA_NUMBER = '224625914607';
-const DELIVERY_HOURS = 50;
+const DELIVERY_HOURS = 48;
 
 let currency = 'GNF';
 let cart = new Set();
@@ -1120,7 +1190,7 @@ async function submitOrder(){
     }catch(e){ console.warn('Supabase:',e); }
   }
 
-  // 3) Compte à rebours 50h
+  // 3) Compte à rebours 48h
   setDelivery(ref);
 
   // 4) WhatsApp pré-rempli
@@ -1157,7 +1227,7 @@ async function submitOrder(){
   setTimeout(()=>window.open(waHref,'_blank'),400);
 }
 
-/* ---------- Compte à rebours livraison 50h ---------- */
+/* ---------- Compte à rebours livraison 48h ---------- */
 let deliveryTimer=null; let statusTimer=null;
 function setDelivery(ref){ const deadline=Date.now()+DELIVERY_HOURS*3600*1000; localStorage.setItem('sorabot_delivery',JSON.stringify({ref,deadline})); startDeliveryWatch(); }
 function getDelivery(){ try{ return JSON.parse(localStorage.getItem('sorabot_delivery')); }catch(e){ return null; } }
@@ -1254,7 +1324,7 @@ window.addEventListener('scroll',()=>{ const b=document.getElementById('scrollTo
    Interactions "Liquid Glass" (purement visuelles — aucune logique)
    ============================================================ */
 (function(){
-  const CARD_SEL='.svc-pick,.offer,.step,.trust-item,.avis-card,.avis-form-card,.cta-band';
+  const CARD_SEL='.svc-pick,.offer,.step,.trust-item,.avis-card,.avis-form-card,.cta-band,.stat,.currency-box,.icon-pastille';
   /* Lueur violette qui suit le curseur (spotlight) — délégué : marche aussi
      sur les cartes re-rendues (offres, avis). Sur mobile : effet au tap. */
   function setSpot(e,x,y){
