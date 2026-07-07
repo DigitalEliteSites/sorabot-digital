@@ -311,7 +311,7 @@ function mapRow(r){
     date: r.created_at ? new Date(r.created_at).toLocaleString('fr-FR') : '',
     prenom: r.prenom, nom: r.nom, whatsapp: r.whatsapp, email: r.email, notes: r.notes,
     dob: d.dob||'', age: (d.age!=null?d.age:null), majeur: (typeof d.majeur==='boolean'?d.majeur:null),
-    pwd: d.pwd||'', paidAmount: (d.paid_amount!=null?d.paid_amount:''), paidCurrency: d.paid_currency||r.currency||'',
+    paidAmount: (d.paid_amount!=null?d.paid_amount:''), paidCurrency: d.paid_currency||r.currency||'',
     discountCode: r.discount_code||'', discountEur: Number(r.discount_eur)||0,
     plan: { name: items.length+' offre'+(items.length>1?'s':''), priceEUR: Number(r.total_eur)||0, priceLocal: r.price_local||'', currency: r.currency||'' },
     selections: r.selections || {},
@@ -452,7 +452,7 @@ function renderOrders(orders){
             <div class="info-row"><span class="info-lbl">Offres</span><span class="info-val">${esc(o.plan.name)}</span></div>
             <div class="info-row"><span class="info-lbl">Total</span><span class="info-val"><strong>${Number(o.plan.priceEUR)||0}€</strong> · ${esc(o.plan.priceLocal)||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">💰 Montant payé</span><span class="info-val">${(o.paidAmount!=null&&o.paidAmount!=='')?esc(o.paidAmount)+' '+esc(o.paidCurrency||''):'—'}</span></div>
-            <div class="info-row"><span class="info-lbl">🔑 Mot de passe</span><span class="info-val" style="font-family:monospace;color:var(--gold)">${esc(o.pwd)||'—'}</span></div>
+            <div class="info-row"><span class="info-lbl">🔑 Mot de passe</span><span class="info-val" style="color:var(--green)">🔒 Protégé (chiffré, non affiché)</span></div>
             <div class="info-row"><span class="info-lbl">Devise client</span><span class="info-val">${esc(o.plan.currency)||'—'}</span></div>
             <div class="info-row"><span class="info-lbl">Paiement</span><span class="info-val" style="color:var(--green);">Orange Money ✓</span></div>
             ${affLine?`<div class="info-row"><span class="info-lbl">🎟️ Affilié</span><span class="info-val" style="color:var(--gold)">${affLine}</span></div>`:''}
@@ -488,7 +488,6 @@ function renderOrders(orders){
           ${waHref?`<a class="btn-action btn-wa" href="${esc(waHref)}" target="_blank">💬 Contacter le client</a>`:`<span class="btn-action" style="background:rgba(255,255,255,.04);border-color:var(--border);color:var(--muted);cursor:not-allowed;">💬 Pas de WhatsApp</span>`}
           <button class="btn-action btn-copy" onclick="copyField('${o.id}','whatsapp','Numéro')">📱 Copier numéro</button>
           <button class="btn-action btn-copy" onclick="copyField('${o.id}','email','Email')">📋 Copier email</button>
-          <button class="btn-action btn-copy" onclick="copyField('${o.id}','pwd','Mot de passe')">🔑 Copier mdp</button>
           <button class="btn-action" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:var(--red);" onclick="deleteOrder('${o.id}')">🗑 Supprimer</button>
         </div>
       </div>
@@ -549,10 +548,10 @@ function showFlash(msg){
 
 function exportCSV(){
   if(!allOrders.length){ alert('Aucune commande à exporter.'); return; }
-  const rows=[['Réf','Date','Prénom','Nom','Naissance','Âge','Majeur','WhatsApp','Email','Mot de passe','Total EUR','Devise','Montant payé','Statut','Offres','Notes client','Notes admin']];
+  const rows=[['Réf','Date','Prénom','Nom','Naissance','Âge','Majeur','WhatsApp','Email','Total EUR','Devise','Montant payé','Statut','Offres','Notes client','Notes admin']];
   allOrders.forEach(o=>{
     const sel=Object.entries(o.selections||{}).map(([k,v])=>`${k}: ${(v||[]).join(', ')}`).join(' | ');
-    rows.push([o.ref,o.date,o.prenom||'',o.nom||'',o.dob||'',o.age!=null?o.age:'',o.majeur===true?'Oui':(o.majeur===false?'Non':''),o.whatsapp||'',o.email||'',o.pwd||'',o.plan?.priceEUR||'',o.plan?.currency||'',(o.paidAmount!=null&&o.paidAmount!==''?o.paidAmount+' '+(o.paidCurrency||''):''),o.status||'',sel,o.notes||'',o.adminNote||'']);
+    rows.push([o.ref,o.date,o.prenom||'',o.nom||'',o.dob||'',o.age!=null?o.age:'',o.majeur===true?'Oui':(o.majeur===false?'Non':''),o.whatsapp||'',o.email||'',o.plan?.priceEUR||'',o.plan?.currency||'',(o.paidAmount!=null&&o.paidAmount!==''?o.paidAmount+' '+(o.paidCurrency||''):''),o.status||'',sel,o.notes||'',o.adminNote||'']);
   });
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
