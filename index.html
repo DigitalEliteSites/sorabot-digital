@@ -765,7 +765,7 @@ section[id],.svc-block{scroll-margin-top:110px}
             <span class="rule" data-r="num">1 chiffre</span>
             <span class="rule" data-r="len">6+ caractères</span>
           </div>
-          <div class="hint">🔒 Choisis un mot de passe <b>pour ta commande</b> — ce n'est PAS le mot de passe de ta boîte mail.</div>
+          <div class="hint">🔒 Choisis un mot de passe <b>pour ta commande</b> — ce n'est PAS le mot de passe de ta boîte mail. Il est stocké de façon <b>sécurisée (chiffré)</b>.</div>
         </div>
         <div class="form-group">
           <label>Confirme le mot de passe *</label>
@@ -934,6 +934,13 @@ let proofOcrDigits = '';
 const sb = (window.supabase && window.SB_URL) ? window.supabase.createClient(window.SB_URL, window.SB_ANON) : null;
 // Neutralise le HTML (anti-XSS) pour tout contenu venant des clients
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Sécurité : on ne stocke JAMAIS le mot de passe en clair. On garde uniquement une empreinte SHA-256.
+async function sha256(txt){
+  try{
+    const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(txt==null?'':txt)));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){ return 'hash_indisponible'; }   // en cas d'échec on ne renvoie surtout pas le mot de passe
+}
 // Code de réduction affilié (le nom/commission ne sont JAMAIS exposés ici)
 let appliedCode=''; let appliedDiscountPct=0; let appliedProductIds=null;
 /* ---------- Thème clair / sombre ---------- */
@@ -1172,7 +1179,8 @@ async function submitOrder(){
 
   const ref='SRB-'+(Date.now()+'').slice(-6);
   const selections={}; items.forEach(it=>{ (selections[it.service]=selections[it.service]||[]).push(it.name); });
-  const details={ pwd:password, dob, age, majeur, paid_amount:paid, paid_currency:currency };
+  const pwd_hash=await sha256(password);   // empreinte irréversible, jamais le mot de passe en clair
+  const details={ pwd_hash, dob, age, majeur, paid_amount:paid, paid_currency:currency };
 
   const order={ id:Date.now(), ref, date:new Date().toLocaleString('fr-FR'), prenom, nom, whatsapp, email, notes,
     plan:{ key:'', name:items.length+' offre'+(items.length>1?'s':''), priceEUR:total, priceLocal:(total>0?fmt(total):'Sur devis'), currency },
