@@ -174,6 +174,18 @@ svg{display:block}
   </div>
 </div>
 
+<!-- Vérification (2e étape) -->
+<div class="login-wrap" id="gateWrap" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">S</div>
+    <h1>Vérification</h1>
+    <p>Une dernière étape pour accéder.</p>
+    <input class="inp" type="password" inputmode="numeric" id="g2" autocomplete="off" placeholder="Code d'accès" onkeydown="if(event.key==='Enter')g2check()"/>
+    <button class="btn-login" onclick="g2check()">Valider</button>
+    <div class="err" id="g2err">❌ Code incorrect</div>
+  </div>
+</div>
+
 <!-- ADMIN -->
 <div class="admin-wrap" id="adminWrap">
   <div class="admin-topbar">
@@ -260,8 +272,17 @@ const PRODUCTS=[
 
 window.addEventListener('DOMContentLoaded', async ()=>{
   const { data } = await sb.auth.getSession();
-  if(data && data.session) showDashboard();
+  if(data && data.session) showGate();
 });
+
+async function _h(t){ const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(t==null?'':t))); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+const _k='d45950ae22f0692b17e66a5ef0cd1ab110316e2ebe5a261dcce9a030e8bf0151';
+function showGate(){ document.getElementById('loginWrap').style.display='none'; document.getElementById('gateWrap').style.display='grid'; const g=document.getElementById('g2'); if(g){ g.value=''; setTimeout(()=>g.focus(),60); } }
+async function g2check(){
+  const g=document.getElementById('g2'); const err=document.getElementById('g2err'); err.style.display='none';
+  if(await _h((g.value||'').trim())===_k){ document.getElementById('gateWrap').style.display='none'; showDashboard(); }
+  else { err.style.display='block'; g.value=''; }
+}
 
 async function login(){
   const email = (document.getElementById('emailInput').value||'').trim();
@@ -274,7 +295,7 @@ async function login(){
   const { error } = await sb.auth.signInWithPassword({ email, password });
   btn.textContent=old; btn.disabled=false;
   if(error){ errEl.textContent='❌ Email ou mot de passe incorrect'; errEl.style.display='block'; return; }
-  showDashboard();
+  showGate();
 }
 
 function showDashboard(){
@@ -287,6 +308,7 @@ function showDashboard(){
 
 async function logout(){
   await sb.auth.signOut();
+  document.getElementById('gateWrap').style.display='none';
   document.getElementById('loginWrap').style.display='grid';
   document.getElementById('adminWrap').style.display='none';
   document.getElementById('pwdInput').value='';
