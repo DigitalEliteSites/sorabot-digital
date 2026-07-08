@@ -18,11 +18,19 @@
 <meta property="og:description" content="Des services digitaux premium livrés en 48h : site web, robots de trading, CV pro et solutions IA. Paiement Orange Money."/>
 <meta property="og:url" content="https://digitalelitesites.github.io/sorabot-digital/"/>
 <meta property="og:locale" content="fr_FR"/>
+<meta property="og:image" content="https://digitalelitesites.github.io/sorabot-digital/og-image.png"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Sorabot Digital — Web · Trading · CV · IA, livré en 48h"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="Sorabot Digital — Web · Trading · CV · IA"/>
-<meta name="twitter:description" content="Services digitaux premium livrés en 48h. Paiement Orange Money."/>
+<meta name="twitter:description" content="Services digitaux premium livrés en 48h."/>
+<meta name="twitter:image" content="https://digitalelitesites.github.io/sorabot-digital/og-image.png"/>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"ProfessionalService","name":"Sorabot Digital","description":"Création de site web, robots & indicateurs de trading, CV professionnels et solutions IA.","url":"https://digitalelitesites.github.io/sorabot-digital/","telephone":"+224625914607","priceRange":"€€","areaServed":"Worldwide","availableLanguage":"French","serviceType":["Création de site web","Trading - robots et indicateurs","Création de CV","Solutions IA"],"contactPoint":{"@type":"ContactPoint","telephone":"+224625914607","contactType":"customer service","availableLanguage":"French"}}
+{"@context":"https://schema.org","@graph":[
+{"@type":"Organization","@id":"https://digitalelitesites.github.io/sorabot-digital/#org","name":"Sorabot Digital","url":"https://digitalelitesites.github.io/sorabot-digital/","logo":"https://digitalelitesites.github.io/sorabot-digital/og-image.png","image":"https://digitalelitesites.github.io/sorabot-digital/og-image.png","description":"Services digitaux premium : création de site web, robots & indicateurs de trading, CV professionnels et solutions IA. Livraison en 48h.","founder":{"@type":"Person","name":"Sewa"},"sameAs":["https://www.tiktok.com/@digital.lite"],"contactPoint":{"@type":"ContactPoint","telephone":"+224625914607","contactType":"customer service","availableLanguage":["French"]}},
+{"@type":"ProfessionalService","@id":"https://digitalelitesites.github.io/sorabot-digital/#service","name":"Sorabot Digital","parentOrganization":{"@id":"https://digitalelitesites.github.io/sorabot-digital/#org"},"url":"https://digitalelitesites.github.io/sorabot-digital/","telephone":"+224625914607","priceRange":"€€","areaServed":"Worldwide","availableLanguage":"French","serviceType":["Création de site web","Trading - robots et indicateurs","Création de CV","Solutions IA"],"hasOfferCatalog":{"@type":"OfferCatalog","name":"Services Sorabot Digital","itemListElement":[{"@type":"Offer","itemOffered":{"@type":"Service","name":"Création de site web","description":"Sites vitrines, boutiques, landing pages et portfolios sur mesure."}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Trading — Robots & Indicateurs","description":"Robots (EA) et indicateurs MetaTrader, stratégies testées, formation."}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Création de CV","description":"CV professionnels, lettres de motivation et optimisation LinkedIn."}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Solutions IA","description":"Prompts, chatbots, automatisations et formations à l'IA."}}]}}
+]}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -814,7 +822,7 @@ section[id],.svc-block{scroll-margin-top:110px}
             <div style="font-size:11px;color:var(--muted);margin-top:4px">Le <strong>montant payé</strong> doit être visible · JPG, PNG</div>
           </div>
           <div id="proofPreview" style="display:none">
-            <img id="proofImg" src="" style="max-width:100%;max-height:180px;border-radius:10px;margin-bottom:8px"/>
+            <img id="proofImg" src="" alt="Aperçu de la preuve de paiement" style="max-width:100%;max-height:180px;border-radius:10px;margin-bottom:8px"/>
             <div style="font-size:12px;color:var(--green);font-weight:700">✓ Preuve ajoutée — clique pour changer</div>
           </div>
         </div>
@@ -849,7 +857,6 @@ section[id],.svc-block{scroll-margin-top:110px}
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
 <script>
@@ -1117,13 +1124,25 @@ function handleProof(input){
 }
 
 /* ---------- Vérification anti-arnaque : le montant doit être lisible sur l'image ---------- */
+// Chargement PARESSEUX de Tesseract (OCR) : ne se télécharge qu'au moment du paiement → accueil plus rapide (SEO/perf)
+let _tessLoading=null;
+function loadTesseract(){
+  if(window.Tesseract) return Promise.resolve();
+  if(_tessLoading) return _tessLoading;
+  _tessLoading=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload=resolve; s.onerror=reject; document.head.appendChild(s);
+  });
+  return _tessLoading;
+}
 async function verifyProofAmount(){
   const total=cartTotalEur();
   const box=document.getElementById('proofStatus');
   if(total<=0){ proofCheck='skip'; if(box) box.style.display='none'; return; }
   proofCheck='pending'; proofOcrDigits='';
   if(box){ box.style.display='block'; box.className='proof-status checking'; box.innerHTML='🔍 Lecture du montant sur l\'image… (quelques secondes)'; }
-  if(typeof Tesseract==='undefined'){ proofCheck='skip'; if(box) box.style.display='none'; return; }
+  if(typeof Tesseract==='undefined'){ try{ await loadTesseract(); }catch(e){ proofCheck='skip'; if(box) box.style.display='none'; return; } }
   try{
     const res=await Tesseract.recognize(proofDataUrl,'eng');
     const text=(res&&res.data&&res.data.text)||'';
